@@ -5,13 +5,24 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 import json
 import os
+import logging
+
+# 导入日志配置
+from logger_config import setup_logger, log_startup_info, log_shutdown_info, get_logger
 
 # 导入路由
 from routers import batches, persons, experiments, competitor_files, finger_blood_data, sensors, auth, activities
 
+# 初始化日志配置
+setup_logger()
+logger = get_logger(__name__)
+
 # datetime格式统一配置已在schemas.py中的BaseModelWithConfig类中设置
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 记录应用启动信息
+    log_startup_info()
+    
     # 创建上传目录 - 使用绝对路径确保跨平台兼容性
     base_dir = os.path.dirname(os.path.abspath(__file__))
     upload_dirs = [
@@ -19,11 +30,11 @@ async def lifespan(app: FastAPI):
     ]
     for dir_path in upload_dirs:
         os.makedirs(dir_path, exist_ok=True)
-    print(f"上传目录创建完成: {upload_dirs}")
+    logger.info(f"上传目录创建完成: {upload_dirs}")
     
     yield
     # 关闭时的清理工作
-    print("应用正在关闭...")
+    log_shutdown_info()
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -76,6 +87,7 @@ def health_check():
 # 全局异常处理
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
+    logger.error(f"全局异常处理: {str(exc)}", exc_info=True)
     return HTTPException(
         status_code=500,
         detail=f"内部服务器错误: {str(exc)}"

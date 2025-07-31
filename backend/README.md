@@ -78,7 +78,7 @@
    创建 `.env` 文件：
    ```env
    DATABASE_URL=mysql+pymysql://username:password@localhost:3306/experiment_db
-   SECRET_KEY=your-secret-key-here
+   SECRET_KEY=ncoZGB_sY8WdSDNcMXlGo11mBUOQJVJXLJNrWnnbtv8
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=admin123
    ```

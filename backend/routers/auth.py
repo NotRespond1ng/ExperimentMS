@@ -7,6 +7,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, UserPermission, RoleEnum, ModuleEnum
+from logger_config import get_logger
 from schemas import (
     LoginRequest, RegisterRequest, LoginResponse, UserCreate, UserUpdate, UserResponse,
     UserListResponse, UserPermissionCreate, UserPermissionResponse,
@@ -14,9 +15,10 @@ from schemas import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["认证管理"])
+logger = get_logger(__name__)
 
 # JWT配置
-SECRET_KEY = "your-secret-key-here-change-in-production"
+SECRET_KEY = "ncoZGB_sY8WdSDNcMXlGo11mBUOQJVJXLJNrWnnbtv8"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -122,8 +124,11 @@ def check_module_permission(module: ModuleEnum, permission_type: str = "read"):
 @router.post("/login", response_model=LoginResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """用户登录"""
+    logger.info(f"用户登录尝试: {login_data.username}")
+    
     user = authenticate_user(db, login_data.username, login_data.password)
     if not user:
+        logger.warning(f"登录失败: 用户名或密码错误 - {login_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
@@ -134,6 +139,8 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
+    
+    logger.info(f"用户登录成功: {user.username} (ID: {user.user_id}, 角色: {user.role.value})")
     
     return LoginResponse(
         access_token=access_token,
@@ -148,9 +155,12 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/register", response_model=LoginResponse)
 def register(register_data: RegisterRequest, db: Session = Depends(get_db)):
     """用户注册"""
+    logger.info(f"用户注册尝试: {register_data.username}")
+    
     # 检查用户名是否已存在
     existing_user = db.query(User).filter(User.username == register_data.username).first()
     if existing_user:
+        logger.warning(f"注册失败: 用户名已存在 - {register_data.username}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="用户名已存在"
@@ -158,6 +168,7 @@ def register(register_data: RegisterRequest, db: Session = Depends(get_db)):
     
     # 密码强度验证
     if len(register_data.password) < 6:
+        logger.warning(f"注册失败: 密码长度不足 - {register_data.username}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="密码长度至少6位"
@@ -173,6 +184,8 @@ def register(register_data: RegisterRequest, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    logger.info(f"用户注册成功: {db_user.username} (ID: {db_user.user_id})")
     
     # 注册成功后自动登录
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

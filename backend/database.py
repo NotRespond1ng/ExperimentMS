@@ -15,6 +15,8 @@ engine = create_engine(
     echo=True,  # 开发环境下显示SQL语句
     pool_pre_ping=True,  # 连接池预检查
     pool_recycle=300,  # 连接回收时间
+    query_cache_size=0,  # 禁用查询缓存
+    compiled_cache={},  # 禁用编译缓存
 )
 
 # 创建会话工厂
