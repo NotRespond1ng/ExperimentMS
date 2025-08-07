@@ -8,7 +8,8 @@ import os
 import logging
 
 # 导入日志配置
-from logger_config import setup_logger, log_startup_info, log_shutdown_info, get_logger
+from logging_setup import setup_logger, log_startup_info, log_shutdown_info, get_logger
+
 
 # 导入路由
 from routers import batches, persons, experiments, competitor_files, finger_blood_data, sensors, auth, activities
@@ -47,7 +48,7 @@ app = FastAPI(
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://192.168.10.14:5173", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],  # 前端地址
+    allow_origins=["http://192.168.10.14", "http://192.168.10.14:5173", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],  # 前端地址
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

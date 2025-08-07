@@ -1,0 +1,65 @@
+version: 1
+# 设置为 false，这样我们可以在 setup_logger 之后继续获取和使用 logger
+disable_existing_loggers: false
+
+# 定义日志格式
+formatters:
+  # 用于应用和 uvicorn.error 的默认格式
+  default:
+    (): "uvicorn.logging.DefaultFormatter"
+    fmt: "%(levelprefix)s %(asctime)s - %(name)s - %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+    use_colors: false # 在文件中不需要颜色代码
+  
+  # 用于 uvicorn.access 的访问日志格式
+  access:
+    (): "uvicorn.logging.AccessFormatter"
+    fmt: '%(levelprefix)s %(asctime)s - %(client_addr)s - "%(request_line)s" %(status_code)s'
+    datefmt: "%Y-%m-%d %H:%M:%S"
+    use_colors: false
+
+# 定义处理器 (Handler)
+handlers:
+  default:
+    formatter: default
+    # 使用进程安全的 handler
+    class: "concurrent_log_handler.ConcurrentRotatingFileHandler"
+    # filename 将被 logging_setup.py 动态替换
+    filename: "logs/app.log" 
+    maxBytes: 52428800 # 50 * 1024 * 1024 = 50MB
+    backupCount: 5
+    encoding: "utf-8"
+
+  # 这个处理器专门处理 uvicorn 的访问日志
+  access:
+    formatter: access
+    class: "concurrent_log_handler.ConcurrentRotatingFileHandler"
+    filename: "logs/app.log" # 同样写入到 app.log
+    maxBytes: 52428800
+    backupCount: 5
+    encoding: "utf-8"
+
+# 定义日志记录器 (Logger)
+loggers:
+  # 配置 uvicorn 的错误日志记录器
+  uvicorn.error:
+    level: INFO
+    handlers: [default] # 使用我们定义的 default handler
+    propagate: no # 防止日志向上传播给根 logger，避免重复记录
+
+  # 配置 uvicorn 的访问日志记录器
+  uvicorn.access:
+    level: INFO
+    handlers: [access] # 使用我们定义的 access handler
+    propagate: no
+
+  # 新增：控制 SQLAlchemy 的日志记录器
+  sqlalchemy.engine:
+    level: WARNING # 设置为 WARNING 来避免记录每一条 SQL (INFO)，减少日志噪音
+    handlers: [default] # 将其输出重定向到文件
+    propagate: no # 防止重复记录
+
+# 根日志记录器配置
+root:
+  level: INFO
+  handlers: [default] # 同样使用 default handler

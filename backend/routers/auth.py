@@ -7,7 +7,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, UserPermission, RoleEnum, ModuleEnum
-from logger_config import get_logger
+from logging_setup import get_logger
 from schemas import (
     LoginRequest, RegisterRequest, LoginResponse, UserCreate, UserUpdate, UserResponse,
     UserListResponse, UserPermissionCreate, UserPermissionResponse,
