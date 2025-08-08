@@ -52,6 +52,22 @@
       </div>
       
       <div class="toolbar-right">
+        <el-button 
+          type="primary" 
+          @click="handleAdd"
+          :disabled="!authStore.hasModulePermission('finger_blood_data', 'write')"
+        >
+          <el-icon><Plus /></el-icon>
+          录入数据
+        </el-button>
+        <el-button 
+          type="success" 
+          @click="handleBatchAdd"
+          :disabled="!authStore.hasModulePermission('finger_blood_data', 'write')"
+        >
+          <el-icon><Plus /></el-icon>
+          批量录入
+        </el-button>
         <el-button @click="toggleChartView">
           <el-icon><TrendCharts /></el-icon>
           {{ showChart ? '隐藏图表' : '显示图表' }}
@@ -63,14 +79,6 @@
         >
           <el-icon><Download /></el-icon>
           导出数据
-        </el-button>
-        <el-button 
-          type="primary" 
-          @click="handleAdd"
-          :disabled="!authStore.hasModulePermission('finger_blood_data', 'write')"
-        >
-          <el-icon><Plus /></el-icon>
-          录入数据
         </el-button>
       </div>
     </div>
@@ -251,13 +259,138 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 批量录入对话框 -->
+    <el-dialog
+      v-model="batchDialogVisible"
+      title="批量录入血糖数据"
+      width="900px"
+      :close-on-click-modal="false"
+      @close="resetBatchForm"
+    >
+      <el-form
+        ref="batchFormRef"
+        :model="batchForm"
+        :rules="batchRules"
+        label-width="120px"
+        label-position="left"
+      >
+        <el-form-item label="关联批次" prop="batch_id">
+          <el-select
+            v-model="batchForm.batch_id"
+            placeholder="请选择批次"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="batch in dataStore.batches"
+              :key="batch.batch_id"
+              :label="`${batch.batch_number} (${batch.start_time})`"
+              :value="batch.batch_id"
+            />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="关联人员" prop="person_id">
+          <el-select
+            v-model="batchForm.person_id"
+            placeholder="请选择人员"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="person in filteredPersonsForBatchForm"
+              :key="person.person_id"
+              :label="`${person.person_name} (ID: ${person.person_id})`"
+              :value="person.person_id"
+            />
+          </el-select>
+          <div class="form-tip">
+            {{ batchForm.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+          </div>
+        </el-form-item>
+
+        <div class="data-section">
+          <div class="section-header">
+            <h4>血糖数据</h4>
+            <el-button type="primary" size="small" @click="addDataItem">
+              <el-icon><Plus /></el-icon>
+              添加数据
+            </el-button>
+          </div>
+
+          <div v-if="batchForm.dataList.length === 0" class="empty-hint">
+            <p>暂无数据，请点击"添加数据"按钮添加</p>
+          </div>
+
+          <div v-for="(dataItem, index) in batchForm.dataList" :key="index" class="data-item">
+            <el-card class="data-card" shadow="never">
+              <div class="data-form">
+                <el-form-item
+                  :prop="`dataList.${index}.collection_time`"
+                  :rules="dataRules.collection_time"
+                  label="采集时间"
+                >
+                  <el-date-picker
+                    v-model="dataItem.collection_time"
+                    type="datetime"
+                    placeholder="选择采集时间"
+                    style="width: 100%"
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                  />
+                </el-form-item>
+
+                <el-form-item
+                  :prop="`dataList.${index}.blood_glucose_value`"
+                  :rules="dataRules.blood_glucose_value"
+                  label="血糖值(mmol/L)"
+                >
+                  <el-input-number
+                    v-model="dataItem.blood_glucose_value"
+                    :min="0"
+                    :max="30"
+                    :precision="1"
+                    :step="0.1"
+                    placeholder="请输入血糖值"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+
+                <div class="data-actions">
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="removeDataItem(index)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                    删除
+                  </el-button>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="batchDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleBatchSubmit"
+          >
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { TrendCharts, Plus, Download } from '@element-plus/icons-vue'
+import { TrendCharts, Plus, Download, Delete } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -300,16 +433,12 @@ const exportLoading = ref(false)
 onMounted(async () => {
   try {
     loading.value = true
-    // 并行加载所有必要的数据
-    const [fingerBloodDataData, batchesData, personsData] = await Promise.all([
-      ApiService.getFingerBloodData(),
-      ApiService.getBatches(),
-      ApiService.getPersons()
+    // 使用缓存机制加载数据
+    await Promise.all([
+      dataStore.loadFingerBloodData(),
+      dataStore.loadBatches(),
+      dataStore.loadPersons()
     ])
-    
-    dataStore.fingerBloodData = fingerBloodDataData
-    dataStore.batches = batchesData
-    dataStore.persons = personsData
   } catch (error) {
     console.error('Failed to load data:', error)
     ElMessage.error('加载数据失败')
@@ -353,8 +482,10 @@ watch(() => filterBatchId.value, (newBatchId, oldBatchId) => {
 })
 const dateRange = ref<[string, string] | null>(null)
 const dialogVisible = ref(false)
+const batchDialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+const batchFormRef = ref<FormInstance>()
 
 // 分页相关
 const { currentPage, pageSize, total, handleSizeChange, handleCurrentChange, resetPagination } = usePagination()
@@ -366,6 +497,15 @@ const form = reactive({
   person_id: undefined as number | undefined,
   collection_time: '',
   blood_glucose_value: undefined as number | undefined
+})
+
+const batchForm = reactive({
+  batch_id: undefined as number | undefined,
+  person_id: undefined as number | undefined,
+  dataList: [] as Array<{
+    collection_time: string,
+    blood_glucose_value: number | undefined
+  }>
 })
 
 const rules = {
@@ -384,6 +524,25 @@ const rules = {
   ]
 }
 
+const batchRules = {
+  batch_id: [
+    { required: true, message: '请选择关联批次', trigger: 'change' }
+  ],
+  person_id: [
+    { required: true, message: '请选择关联人员', trigger: 'change' }
+  ]
+}
+
+const dataRules = {
+  collection_time: [
+    { required: true, message: '请选择采集时间', trigger: 'change' }
+  ],
+  blood_glucose_value: [
+    { required: true, message: '请输入血糖值', trigger: 'blur' },
+    { type: 'number', min: 0, max: 30, message: '血糖值应在0-30之间', trigger: 'blur' }
+  ]
+}
+
 // 根据选择的批次过滤人员（表单）
 const filteredPersonsForForm = computed(() => {
   if (!form.batch_id) {
@@ -392,10 +551,25 @@ const filteredPersonsForForm = computed(() => {
   return dataStore.persons.filter(person => person.batch_id === form.batch_id)
 })
 
+// 根据选择的批次过滤人员（批量录入表单）
+const filteredPersonsForBatchForm = computed(() => {
+  if (!batchForm.batch_id) {
+    return []
+  }
+  return dataStore.persons.filter(person => person.batch_id === batchForm.batch_id)
+})
+
 // 监听批次选择变化，清空人员选择（表单）
 watch(() => form.batch_id, (newBatchId, oldBatchId) => {
   if (newBatchId !== oldBatchId) {
     form.person_id = undefined
+  }
+})
+
+// 监听批量录入表单中批次选择变化，清空人员选择
+watch(() => batchForm.batch_id, (newBatchId, oldBatchId) => {
+  if (newBatchId !== oldBatchId) {
+    batchForm.person_id = undefined
   }
 })
 
@@ -578,6 +752,18 @@ const getGlucoseLevel = (value: number) => {
   }
 }
 
+// 获取人员性别显示
+const getGenderDisplay = (gender: string) => {
+  switch (gender) {
+    case 'Male':
+      return '男'
+    case 'Female':
+      return '女'
+    default:
+      return '其他'
+  }
+}
+
 
 
 
@@ -598,6 +784,76 @@ const handleAdd = () => {
   isEdit.value = false
   dialogVisible.value = true
   resetForm()
+}
+
+// 批量录入数据
+const handleBatchAdd = () => {
+  resetBatchForm()
+  batchDialogVisible.value = true
+}
+
+// 添加数据项到批量录入
+const addDataItem = () => {
+  batchForm.dataList.push({
+    collection_time: '',
+    blood_glucose_value: undefined
+  })
+}
+
+// 删除数据项
+const removeDataItem = (index: number) => {
+  batchForm.dataList.splice(index, 1)
+}
+
+// 重置批量录入表单
+const resetBatchForm = () => {
+  Object.assign(batchForm, {
+    batch_id: undefined,
+    person_id: undefined,
+    dataList: []
+  })
+  if (batchFormRef.value) {
+    batchFormRef.value.resetFields()
+  }
+}
+
+// 批量提交数据
+const handleBatchSubmit = async () => {
+  if (!batchFormRef.value) return
+  
+  if (batchForm.dataList.length === 0) {
+    ElMessage.warning('请至少添加一条数据')
+    return
+  }
+  
+  await batchFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        loading.value = true
+        
+        // 批量添加数据
+        for (const dataItem of batchForm.dataList) {
+          if (dataItem.collection_time && dataItem.blood_glucose_value !== undefined) {
+            await dataStore.addFingerBloodData({
+              batch_id: batchForm.batch_id!,
+              person_id: batchForm.person_id!,
+              collection_time: dataItem.collection_time,
+              blood_glucose_value: dataItem.blood_glucose_value
+            })
+          }
+        }
+        
+        ElMessage.success('批量录入成功')
+        batchDialogVisible.value = false
+        resetBatchForm()
+      } catch (error) {
+        console.error('Batch submit failed:', error)
+        ElMessage.error('批量录入失败')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
 }
 
 // 编辑数据
@@ -859,5 +1115,63 @@ watch([filterBatchId, filterPersonId, dateRange], () => {
   .toolbar-right {
     justify-content: center;
   }
+}
+
+/* 批量录入样式 */
+.data-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
+}
+
+.data-item {
+  margin-bottom: 16px;
+}
+
+.data-card {
+  border: 1px solid #e4e7ed;
+}
+
+.data-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.data-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 32px;
+}
+
+.form-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+:deep(.data-form .el-form-item) {
+  margin-bottom: 0;
 }
 </style>

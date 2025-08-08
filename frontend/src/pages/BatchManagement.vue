@@ -62,6 +62,13 @@
             {{ row.end_time || getBatchStatus(row).label }}
           </template>
         </el-table-column>
+        <el-table-column prop="person_count" label="人数" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag type="info" size="small">
+              {{ row.person_count || 0 }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="getBatchStatus(row).type">
@@ -109,7 +116,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑批次' : '新建批次'"
-      width="500px"
+      width="680px"
       @close="resetForm"
     >
       <el-form
@@ -147,6 +154,76 @@
             clearable
           />
         </el-form-item>
+        
+        <!-- 人员信息录入区域（仅新建时显示） -->
+        <div v-if="!isEdit" class="person-section">
+          <div class="section-header">
+            <h4>同时添加人员（可选）</h4>
+            <el-button type="primary" size="small" @click="addPerson">
+              <el-icon><Plus /></el-icon>
+              添加人员
+            </el-button>
+          </div>
+          
+          <div v-if="form.persons.length === 0" class="empty-hint">
+            <p>可选择在创建批次时同时添加人员信息，也可以稍后在人员管理中添加</p>
+          </div>
+          
+          <!-- START: MODIFIED SECTION -->
+          <div v-for="(person, index) in form.persons" :key="index" class="person-item">
+            <el-card shadow="never" class="person-card">
+              <div class="person-form">
+                <div class="person-inline-row">
+                  <!-- 姓名 -->
+                  <el-form-item
+                    :prop="'persons.' + index + '.person_name'"
+                    :rules="personRules.person_name"
+                    label="姓名"
+                    class="inline-form-item"
+                  >
+                    <el-input
+                      v-model="person.person_name"
+                      placeholder="请输入姓名"
+                      clearable
+                    />
+                  </el-form-item>
+
+                  <!-- 性别 -->
+                  <el-form-item label="性别" class="inline-form-item">
+                    <el-select
+                      v-model="person.gender"
+                      placeholder="请选择"
+                      clearable
+                      style="width: 100%"
+                    >
+                      <el-option label="男" value="Male" />
+                      <el-option label="女" value="Female" />
+                      <el-option label="其他" value="Other" />
+                    </el-select>
+                  </el-form-item>
+
+                  <!-- 年龄 -->
+                  <el-form-item label="年龄" class="inline-form-item">
+                    <el-input
+                      v-model.number="person.age"
+                      type="number"
+                      placeholder="请输入年龄"
+                      :min="1"
+                      :max="120"
+                      clearable
+                    />
+                  </el-form-item>
+                  
+                  <!-- 删除按钮 -->
+                  <el-button type="danger" plain size="small" @click="removePerson(index)">
+                    删除
+                  </el-button>
+                </div>
+              </div>
+            </el-card>
+          </div>
+          <!-- END: MODIFIED SECTION -->
+        </div>
       </el-form>
       
       <template #footer>
@@ -162,7 +239,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { Search, Plus, Download } from '@element-plus/icons-vue'
+import { Search, Plus, Download, Delete } from '@element-plus/icons-vue'
 import { usePagination } from '../composables/usePagination'
 import { useSearch } from '../composables/useFilter'
 import { exportToExcel } from '../utils/excel'
@@ -173,15 +250,15 @@ import { useAuthStore } from '../stores/auth'
 const dataStore = useDataStore()
 const authStore = useAuthStore()
 
-// 组件挂载时获取最新数据
+// 组件挂载时检查数据是否已加载
 onMounted(async () => {
   try {
     loading.value = true
-    const batchesData = await ApiService.getBatches()
-    dataStore.batches = batchesData
+    // 使用缓存机制加载批次数据
+    await dataStore.loadBatches()
   } catch (error) {
     console.error('Failed to load batches:', error)
-    ElMessage.error('加载批次数据失败')
+    ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
@@ -197,7 +274,13 @@ const form = reactive({
   batch_id: 0,
   batch_number: '',
   start_time: '',
-  end_time: ''
+  end_time: '',
+  // 人员信息
+  persons: [] as Array<{
+    person_name: string
+    gender?: 'Male' | 'Female' | 'Other'
+    age?: number
+  }>
 })
 
 const rules = {
@@ -208,6 +291,21 @@ const rules = {
   start_time: [
     { required: true, message: '请选择开始时间', trigger: 'change' }
   ]
+}
+
+// 人员表单验证规则
+const personRules = {
+  person_name: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { min: 2, max: 20, message: '姓名长度在 2 到 20 个字符', trigger: 'blur' }
+  ]
+}
+
+// 性别映射
+const genderMap = {
+  Male: '男',
+  Female: '女',
+  Other: '其他'
 }
 
 // 获取批次状态
@@ -264,14 +362,12 @@ watch(filteredBatches, (newVal) => {
 
 // 搜索处理
 const handleSearch = () => {
-  // 搜索逻辑已在computed中处理
   resetPagination()
 }
 
 // 导出数据
 const handleExport = () => {
   try {
-    // 准备导出数据
     const exportData = filteredBatches.value.map(batch => ({
       '批次ID': batch.batch_id,
       '批次号': batch.batch_number,
@@ -297,6 +393,20 @@ const handleAdd = () => {
   isEdit.value = false
   dialogVisible.value = true
   resetForm()
+}
+
+// 添加人员
+const addPerson = () => {
+  form.persons.push({
+    person_name: '',
+    gender: undefined,
+    age: undefined
+  })
+}
+
+// 删除人员
+const removePerson = (index: number) => {
+  form.persons.splice(index, 1)
 }
 
 // 编辑批次
@@ -337,7 +447,6 @@ const handleSubmit = async () => {
     if (valid) {
       try {
         if (isEdit.value) {
-          // 编辑
           await dataStore.updateBatch(form.batch_id, {
             batch_number: form.batch_number,
             start_time: form.start_time,
@@ -345,20 +454,51 @@ const handleSubmit = async () => {
           })
           ElMessage.success('更新成功')
         } else {
-          // 新建
-          await dataStore.addBatch({
+          const newBatch = await dataStore.addBatch({
             batch_number: form.batch_number,
             start_time: form.start_time,
-            end_time: form.end_time || undefined
+            end_time: form.end_time || undefined,
+            person_count: 0
           })
-          ElMessage.success('创建成功')
+          
+          if (form.persons.length > 0) {
+            const validPersons = form.persons.filter(p => p.person_name.trim())
+            for (const person of validPersons) {
+              await dataStore.addPerson({
+                person_name: person.person_name,
+                gender: person.gender || undefined,
+                age: person.age || undefined,
+                batch_id: newBatch.batch_id
+              })
+            }
+            
+            // 重新获取批次数据以更新person_count
+            const batchesData = await ApiService.getBatches()
+            dataStore.batches = batchesData
+            
+            if (validPersons.length > 0) {
+              ElMessage.success(`批次创建成功，已添加 ${validPersons.length} 位人员`)
+            } else {
+              ElMessage.success('批次创建成功')
+            }
+          } else {
+            ElMessage.success('批次创建成功')
+          }
         }
         
         dialogVisible.value = false
         resetForm()
-      } catch (error) {
+      } catch (error: any) {
         console.error('Submit failed:', error)
-        ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
+        let errorMessage = isEdit.value ? '更新失败' : '创建失败'
+        
+        if (error?.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        } else if (error?.message && !error.message.includes('Request failed')) {
+          errorMessage = error.message
+        }
+        
+        ElMessage.error(errorMessage)
       }
     }
   })
@@ -373,7 +513,8 @@ const resetForm = () => {
     batch_id: 0,
     batch_number: '',
     start_time: '',
-    end_time: ''
+    end_time: '',
+    persons: []
   })
 }
 </script>
@@ -445,5 +586,94 @@ const resetForm = () => {
   background-color: #fafafa;
   color: #606266;
   font-weight: 600;
+}
+
+/* 人员信息录入区域样式 */
+.person-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 20px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.empty-hint p {
+  margin: 0;
+}
+
+.person-item {
+  margin-bottom: 16px;
+}
+
+.person-card {
+  border: 1px solid #e4e7ed;
+}
+
+.person-form {
+  width: 100%;
+}
+
+/* START: NEW/MODIFIED STYLES FOR INLINE FORM */
+.person-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.inline-form-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1; 
+  margin-bottom: 0;
+}
+
+:deep(.inline-form-item .el-form-item__label) {
+  padding: 0;
+  line-height: normal;
+  width: auto !important;
+  color: #606266;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+:deep(.inline-form-item .el-form-item__content) {
+  margin-left: 0 !important;
+  flex: 1;
+}
+
+:deep(.inline-form-item.is-required .el-form-item__label::before) {
+    content: '*';
+    color: var(--el-color-danger);
+    margin-right: 4px;
+}
+/* END: NEW/MODIFIED STYLES */
+
+@media (max-width: 768px) {
+  .person-inline-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
 }
 </style>

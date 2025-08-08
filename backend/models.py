@@ -30,6 +30,7 @@ class Batch(Base):
     batch_number = Column(String(50), unique=True, nullable=False, comment="批次号名，确保唯一性")
     start_time = Column(DateTime, nullable=False, comment="批次开始时间")
     end_time = Column(DateTime, nullable=True, comment="批次结束时间")
+    person_count = Column(Integer, default=0, comment="批次绑定的人员数量")
     
     # 关系
     persons = relationship("Person", back_populates="batch")
@@ -137,10 +138,10 @@ class Activity(Base):
     __tablename__ = "activities"
     
     activity_id = Column(Integer, primary_key=True, index=True, comment="活动唯一标识符")
-    activity_type = Column(String(50), nullable=False, comment="活动类型")
+    activity_type = Column(String(50), nullable=False, index=True, comment="活动类型")
     description = Column(Text, nullable=False, comment="活动描述")
-    createTime = Column(DateTime, nullable=False, default=datetime.now, comment="创建时间")
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True, comment="操作用户ID")
+    createTime = Column(DateTime, nullable=False, default=datetime.now, index=True, comment="创建时间")
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True, index=True, comment="操作用户ID")
     
     # 关系
     user = relationship("User")

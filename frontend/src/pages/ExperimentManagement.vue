@@ -248,14 +248,13 @@ const authStore = useAuthStore()
 onMounted(async () => {
   try {
     loading.value = true
-    const [experimentsData, batchesData, personsData] = await Promise.all([
-      ApiService.getExperiments(),
-      ApiService.getBatches(),
-      ApiService.getPersons()
+    
+    // 使用缓存机制加载数据
+    await Promise.all([
+      dataStore.loadExperiments(),
+      dataStore.loadPersons(),
+      dataStore.loadBatches()
     ])
-    dataStore.experiments = experimentsData
-    dataStore.batches = batchesData
-    dataStore.persons = personsData
   } catch (error) {
     console.error('Failed to load data:', error)
     ElMessage.error('加载数据失败')

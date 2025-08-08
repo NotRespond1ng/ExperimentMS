@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/activities", tags=["activities"])
 
 @router.get("/", response_model=List[ActivityResponse])
 def get_activities(
-    limit: int = 50,
+    limit: int = 10,  # 减少默认查询数量
     skip: int = 0,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -20,8 +20,19 @@ def get_activities(
     """
     获取最近活动列表
     """
+    # 限制最大查询数量，防止性能问题
+    limit = min(limit, 50)
+    
+    # 优化查询：只选择需要的字段，减少数据传输
     activities = (
-        db.query(Activity)
+        db.query(
+            Activity.activity_id,
+            Activity.activity_type,
+            Activity.description,
+            Activity.createTime,
+            Activity.user_id,
+            User.username
+        )
         .outerjoin(User, Activity.user_id == User.user_id)
         .order_by(Activity.createTime.desc())
         .offset(skip)
@@ -29,17 +40,18 @@ def get_activities(
         .all()
     )
     
-    result = []
-    for activity in activities:
-        activity_dict = {
-            "activity_id": activity.activity_id,
-            "activity_type": activity.activity_type,
-            "description": activity.description,
-            "createTime": activity.createTime,
-            "user_id": activity.user_id,
-            "username": activity.user.username if activity.user else None
-        }
-        result.append(ActivityResponse(**activity_dict))
+    # 直接构建响应，避免额外的对象创建
+    result = [
+        ActivityResponse(
+            activity_id=activity.activity_id,
+            activity_type=activity.activity_type,
+            description=activity.description,
+            createTime=activity.createTime,
+            user_id=activity.user_id,
+            username=activity.username
+        )
+        for activity in activities
+    ]
     
     return result
 

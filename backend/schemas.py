@@ -43,6 +43,10 @@ class BatchUpdate(BatchBase):
 
 class BatchResponse(BatchBase):
     batch_id: int
+    person_count: int = 0
+    
+    class Config:
+        from_attributes = True
 
 # 人员相关模式
 class PersonBase(BaseModel):

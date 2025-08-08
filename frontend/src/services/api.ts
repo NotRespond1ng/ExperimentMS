@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://192.168.10.14:8000',
+  baseURL: 'http://localhost:8000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -17,6 +17,7 @@ export interface Batch {
   batch_number: string
   start_time: string
   end_time?: string
+  person_count: number
 }
 
 export interface Person {
@@ -52,6 +53,13 @@ export interface Activity {
   createTime: string
   user_id?: number
   username?: string
+}
+
+export interface DashboardStats {
+  batches_count: number
+  persons_count: number
+  experiments_count: number
+  finger_blood_data_count: number
 }
 
 export interface CompetitorFile {
@@ -313,6 +321,12 @@ export class ApiService {
     const response = await api.get(`/api/competitorFiles/export?${params.toString()}`, {
       responseType: 'blob'
     })
+    return response.data
+  }
+
+  // 统计数据
+  static async getDashboardStats(): Promise<DashboardStats> {
+    const response = await api.get('/api/stats/dashboard')
     return response.data
   }
 }

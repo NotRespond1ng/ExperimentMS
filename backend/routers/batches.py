@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from models import Batch, User
+from models import Batch, User, Person
 from schemas import BatchCreate, BatchUpdate, BatchResponse, MessageResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -24,6 +24,12 @@ def get_batches(
         query = query.filter(Batch.batch_number.contains(search))
     
     batches = query.offset(skip).limit(limit).all()
+    
+    # 为每个批次动态计算person_count
+    for batch in batches:
+        person_count = db.query(Person).filter(Person.batch_id == batch.batch_id).count()
+        batch.person_count = person_count
+    
     return batches
 
 @router.post("/", response_model=BatchResponse)
@@ -42,6 +48,11 @@ def create_batch(
     db.add(db_batch)
     db.commit()
     db.refresh(db_batch)
+    
+    # 动态计算person_count
+    person_count = db.query(Person).filter(Person.batch_id == db_batch.batch_id).count()
+    db_batch.person_count = person_count
+    
     return db_batch
 
 @router.get("/{batch_id}", response_model=BatchResponse)
@@ -54,6 +65,11 @@ def get_batch(
     batch = db.query(Batch).filter(Batch.batch_id == batch_id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="批次不存在")
+    
+    # 动态计算person_count
+    person_count = db.query(Person).filter(Person.batch_id == batch.batch_id).count()
+    batch.person_count = person_count
+    
     return batch
 
 @router.put("/{batch_id}", response_model=BatchResponse)
@@ -82,6 +98,11 @@ def update_batch(
     
     db.commit()
     db.refresh(db_batch)
+    
+    # 动态计算person_count
+    person_count = db.query(Person).filter(Person.batch_id == db_batch.batch_id).count()
+    db_batch.person_count = person_count
+    
     return db_batch
 
 @router.delete("/{batch_id}", response_model=MessageResponse)

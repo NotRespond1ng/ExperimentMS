@@ -32,31 +32,178 @@ export const useDataStore = defineStore('data', () => {
   // 加载状态
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  // 数据缓存状态跟踪
+  const dataLoaded = ref({
+    batches: false,
+    persons: false,
+    experiments: false,
+    competitorFiles: false,
+    fingerBloodData: false,
+    sensors: false,
+    initialized: false
+  })
+  
+  // 最后加载时间戳，用于缓存过期检查
+  const lastLoadTime = ref<Record<string, number>>({})
+  
+  // 缓存过期时间（5分钟）
+  const CACHE_EXPIRE_TIME = 5 * 60 * 1000
 
-  // 初始化数据
-  const initializeData = async () => {
+  // 检查缓存是否过期
+  const isCacheExpired = (dataType: string): boolean => {
+    const lastLoad = lastLoadTime.value[dataType]
+    if (!lastLoad) return true
+    return Date.now() - lastLoad > CACHE_EXPIRE_TIME
+  }
+  
+  // 单独加载各类数据的方法
+  const loadBatches = async (force = false) => {
+    if (!force && dataLoaded.value.batches && !isCacheExpired('batches')) {
+      return batches.value
+    }
+    
+    try {
+      const data = await ApiService.getBatches()
+      batches.value = data
+      dataLoaded.value.batches = true
+      lastLoadTime.value.batches = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load batches:', err)
+      throw err
+    }
+  }
+  
+  const loadPersons = async (force = false) => {
+    if (!force && dataLoaded.value.persons && !isCacheExpired('persons')) {
+      return persons.value
+    }
+    
+    try {
+      const data = await ApiService.getPersons()
+      persons.value = data
+      dataLoaded.value.persons = true
+      lastLoadTime.value.persons = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load persons:', err)
+      throw err
+    }
+  }
+  
+  const loadExperiments = async (force = false) => {
+    if (!force && dataLoaded.value.experiments && !isCacheExpired('experiments')) {
+      return experiments.value
+    }
+    
+    try {
+      const data = await ApiService.getExperiments()
+      experiments.value = data
+      dataLoaded.value.experiments = true
+      lastLoadTime.value.experiments = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load experiments:', err)
+      throw err
+    }
+  }
+  
+  const loadCompetitorFiles = async (force = false) => {
+    if (!force && dataLoaded.value.competitorFiles && !isCacheExpired('competitorFiles')) {
+      return competitorFiles.value
+    }
+    
+    try {
+      const data = await ApiService.getCompetitorFiles()
+      competitorFiles.value = data
+      dataLoaded.value.competitorFiles = true
+      lastLoadTime.value.competitorFiles = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load competitor files:', err)
+      throw err
+    }
+  }
+  
+  const loadFingerBloodData = async (force = false) => {
+    if (!force && dataLoaded.value.fingerBloodData && !isCacheExpired('fingerBloodData')) {
+      return fingerBloodData.value
+    }
+    
+    try {
+      const data = await ApiService.getFingerBloodData()
+      fingerBloodData.value = data
+      dataLoaded.value.fingerBloodData = true
+      lastLoadTime.value.fingerBloodData = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load finger blood data:', err)
+      throw err
+    }
+  }
+  
+  const loadSensors = async (force = false) => {
+    if (!force && dataLoaded.value.sensors && !isCacheExpired('sensors')) {
+      return sensors.value
+    }
+    
+    try {
+      const data = await ApiService.getSensors()
+      sensors.value = data
+      dataLoaded.value.sensors = true
+      lastLoadTime.value.sensors = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load sensors:', err)
+      throw err
+    }
+  }
+  
+  // 优化后的初始化数据方法
+  const initializeData = async (force = false) => {
+    // 如果已经初始化且未过期，直接返回
+    if (!force && dataLoaded.value.initialized && !isCacheExpired('initialized')) {
+      return
+    }
+    
     try {
       loading.value = true
       error.value = null
       
-      const [batchesData, personsData, experimentsData, competitorFilesData, fingerBloodDataData, sensorsData] = await Promise.all([
-        ApiService.getBatches(),
-        ApiService.getPersons(),
-        ApiService.getExperiments(),
-        ApiService.getCompetitorFiles(),
-        ApiService.getFingerBloodData(),
-        ApiService.getSensors()
+      // 只加载核心数据，其他数据按需加载
+      await Promise.all([
+        loadBatches(force),
+        loadPersons(force)
       ])
       
-      batches.value = batchesData
-      persons.value = personsData
-      experiments.value = experimentsData
-      competitorFiles.value = competitorFilesData
-      fingerBloodData.value = fingerBloodDataData
-      sensors.value = sensorsData
+      dataLoaded.value.initialized = true
+      lastLoadTime.value.initialized = Date.now()
     } catch (err) {
       error.value = err instanceof Error ? err.message : '加载数据失败'
       console.error('Failed to initialize data:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 按需加载所有数据
+  const loadAllData = async (force = false) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      await Promise.all([
+        loadBatches(force),
+        loadPersons(force),
+        loadExperiments(force),
+        loadCompetitorFiles(force),
+        loadFingerBloodData(force),
+        loadSensors(force)
+      ])
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '加载数据失败'
+      console.error('Failed to load all data:', err)
     } finally {
       loading.value = false
     }
@@ -68,9 +215,11 @@ export const useDataStore = defineStore('data', () => {
       const newBatch = await ApiService.createBatch(batch)
       batches.value.push(newBatch)
       return newBatch
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '创建批次失败'
-      throw err
+    } catch (err: any) {
+      // 提取后端返回的具体错误信息
+      const errorMessage = err?.response?.data?.detail || err?.message || '创建批次失败'
+      error.value = errorMessage
+      throw new Error(errorMessage)
     }
   }
 
@@ -82,9 +231,11 @@ export const useDataStore = defineStore('data', () => {
         batches.value[index] = updatedBatch
       }
       return updatedBatch
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '更新批次失败'
-      throw err
+    } catch (err: any) {
+      // 提取后端返回的具体错误信息
+      const errorMessage = err?.response?.data?.detail || err?.message || '更新批次失败'
+      error.value = errorMessage
+      throw new Error(errorMessage)
     }
   }
 
@@ -106,6 +257,10 @@ export const useDataStore = defineStore('data', () => {
     try {
       const newPerson = await ApiService.createPerson(person)
       persons.value.push(newPerson)
+      
+      // 添加人员后，重新加载批次数据以更新 person_count
+      batches.value = await ApiService.getBatches()
+      
       return newPerson
     } catch (err) {
       error.value = err instanceof Error ? err.message : '创建人员失败'
@@ -134,6 +289,10 @@ export const useDataStore = defineStore('data', () => {
       if (index !== -1) {
         persons.value.splice(index, 1)
       }
+      
+      // 删除人员后，同样重新加载批次数据
+      batches.value = await ApiService.getBatches()
+      
     } catch (err) {
       error.value = err instanceof Error ? err.message : '删除人员失败'
       throw err
@@ -293,8 +452,16 @@ export const useDataStore = defineStore('data', () => {
     // 状态
     loading,
     error,
-    // 初始化
+    dataLoaded,
+    // 初始化和数据加载
     initializeData,
+    loadAllData,
+    loadBatches,
+    loadPersons,
+    loadExperiments,
+    loadCompetitorFiles,
+    loadFingerBloodData,
+    loadSensors,
     // 批次管理
     addBatch,
     updateBatch,

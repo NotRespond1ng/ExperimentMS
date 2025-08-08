@@ -7,53 +7,73 @@
     
     <!-- 统计卡片 -->
     <div class="stats-grid">
-      <el-card class="stat-card batch-card">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <el-icon size="32"><Collection /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ dataStore.batches.length }}</div>
-            <div class="stat-label">实验批次</div>
-          </div>
-        </div>
-      </el-card>
+      <!-- 统计卡片骨架屏 -->
+      <template v-if="statsLoading">
+        <el-card v-for="i in 4" :key="i" class="stat-card">
+          <el-skeleton animated>
+            <template #template>
+              <div class="stat-content">
+                <el-skeleton-item variant="circle" style="width: 60px; height: 60px" />
+                <div class="stat-info">
+                  <el-skeleton-item variant="h1" style="width: 60px; margin-bottom: 8px" />
+                  <el-skeleton-item variant="text" style="width: 80px" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
+        </el-card>
+      </template>
       
-      <el-card class="stat-card person-card">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <el-icon size="32"><User /></el-icon>
+      <!-- 实际统计卡片 -->
+      <template v-else>
+        <el-card class="stat-card batch-card">
+          <div class="stat-content">
+            <div class="stat-icon">
+              <el-icon size="32"><Collection /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ dashboardStats.batches_count }}</div>
+              <div class="stat-label">实验批次</div>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ dataStore.persons.length }}</div>
-            <div class="stat-label">受试人员</div>
+        </el-card>
+        
+        <el-card class="stat-card person-card">
+          <div class="stat-content">
+            <div class="stat-icon">
+              <el-icon size="32"><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ dashboardStats.persons_count }}</div>
+              <div class="stat-label">受试人员</div>
+            </div>
           </div>
-        </div>
-      </el-card>
-      
-      <el-card class="stat-card experiment-card">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <el-icon size="32"><DataAnalysis /></el-icon>
+        </el-card>
+        
+        <el-card class="stat-card experiment-card">
+          <div class="stat-content">
+            <div class="stat-icon">
+              <el-icon size="32"><DataAnalysis /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ dashboardStats.experiments_count }}</div>
+              <div class="stat-label">实验记录</div>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ dataStore.experiments.length }}</div>
-            <div class="stat-label">实验记录</div>
+        </el-card>
+        
+        <el-card class="stat-card data-card">
+          <div class="stat-content">
+            <div class="stat-icon">
+              <el-icon size="32"><TrendCharts /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ dashboardStats.finger_blood_data_count }}</div>
+              <div class="stat-label">血糖数据</div>
+            </div>
           </div>
-        </div>
-      </el-card>
-      
-      <el-card class="stat-card data-card">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <el-icon size="32"><TrendCharts /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ dataStore.fingerBloodData.length }}</div>
-            <div class="stat-label">血糖数据</div>
-          </div>
-        </div>
-      </el-card>
+        </el-card>
+      </template>
     </div>
     
     <!-- 快速操作 -->
@@ -95,10 +115,27 @@
         <template #header>
           <div class="card-header">
             <span>最近活动</span>
+            <el-icon v-if="activitiesLoading" class="is-loading"><Loading /></el-icon>
           </div>
         </template>
         
-        <el-timeline>
+        <!-- 活动列表骨架屏 -->
+        <template v-if="activitiesLoading">
+          <el-skeleton animated>
+            <template #template>
+              <div v-for="i in 4" :key="i" class="activity-skeleton">
+                <el-skeleton-item variant="circle" style="width: 12px; height: 12px" />
+                <div class="activity-content">
+                  <el-skeleton-item variant="text" style="width: 200px; margin-bottom: 4px" />
+                  <el-skeleton-item variant="text" style="width: 120px" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
+        </template>
+        
+        <!-- 实际活动列表 -->
+        <el-timeline v-else>
           <el-timeline-item
             v-for="activity in recentActivities"
             :key="activity.id"
@@ -123,20 +160,42 @@ import {
   Plus,
   UserFilled,
   DocumentAdd,
-  DataLine
+  DataLine,
+  Loading
 } from '@element-plus/icons-vue'
-import { useDataStore } from '../stores/data'
 import { ApiService } from '../services/api'
+import type { DashboardStats } from '../services/api'
 
-const dataStore = useDataStore()
 const recentActivities = ref([])
-const loading = ref(false)
+const activitiesLoading = ref(false)
+const statsLoading = ref(false)
+const dashboardStats = ref<DashboardStats>({
+  batches_count: 0,
+  persons_count: 0,
+  experiments_count: 0,
+  finger_blood_data_count: 0
+})
+
+// 获取统计数据
+const fetchDashboardStats = async () => {
+  try {
+    statsLoading.value = true
+    const stats = await ApiService.getDashboardStats()
+    dashboardStats.value = stats
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    // 保持默认值
+  } finally {
+    statsLoading.value = false
+  }
+}
 
 // 获取最近活动数据
 const fetchRecentActivities = async () => {
   try {
-    loading.value = true
-    const activities = await ApiService.getActivities()
+    activitiesLoading.value = true
+    // 减少查询数量，提高性能
+    const activities = await ApiService.getActivities(5)
     recentActivities.value = activities.map(activity => {
       const username = activity.username || '系统'
       return {
@@ -167,16 +226,10 @@ const fetchRecentActivities = async () => {
         description: 'user1 录入了血糖数据',
         time: '2024-01-01 14:00:00',
         type: 'warning'
-      },
-      {
-        id: 4,
-        description: 'admin 创建了血糖监测实验',
-        time: '2024-01-01 10:00:00',
-        type: 'info'
       }
     ]
   } finally {
-    loading.value = false
+    activitiesLoading.value = false
   }
 }
 
@@ -202,11 +255,16 @@ const getActivityType = (activityType: string) => {
 let refreshInterval: number | null = null
 
 onMounted(async () => {
-  // 初始化所有数据
-  await dataStore.initializeData()
-  fetchRecentActivities()
-  // 每30秒刷新一次活动数据
-  refreshInterval = setInterval(fetchRecentActivities, 30000)
+  // 分步加载：先加载统计数据，再加载活动数据
+  // 这样用户可以更快看到主要内容
+  await fetchDashboardStats()
+  
+  // 延迟加载活动数据，避免阻塞主要内容
+  setTimeout(async () => {
+    await fetchRecentActivities()
+    // 每60秒刷新一次活动数据（降低频率）
+    refreshInterval = setInterval(fetchRecentActivities, 60000)
+  }, 100)
 })
 
 onUnmounted(() => {
@@ -333,5 +391,41 @@ onUnmounted(() => {
 :deep(.el-timeline-item__timestamp) {
   color: #909399;
   font-size: 12px;
+}
+
+/* 骨架屏样式 */
+.activity-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.is-loading {
+  animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 统计卡片骨架屏优化 */
+.stat-card .el-skeleton {
+  padding: 0;
+}
+
+.stat-card .stat-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 </style>

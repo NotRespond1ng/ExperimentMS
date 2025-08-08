@@ -37,6 +37,14 @@
           <el-icon><Plus /></el-icon>
           新建人员
         </el-button>
+        <el-button 
+          :disabled="!authStore.hasModulePermission('person_management', 'write')"
+          type="success" 
+          @click="handleBatchAdd"
+        >
+          <el-icon><Plus /></el-icon>
+          批量添加
+        </el-button>
       </div>
     </div>
     
@@ -177,13 +185,124 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 批量添加人员对话框 -->
+    <el-dialog
+      v-model="batchDialogVisible"
+      title="批量添加人员"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        :model="batchForm"
+        :rules="batchRules"
+        label-width="100px"
+        label-position="left"
+      >
+        <el-form-item label="选择批次" prop="batch_id">
+          <el-select
+            v-model="batchForm.batch_id"
+            placeholder="请选择批次"
+            style="width: 100%"
+            clearable
+          >
+            <el-option
+              v-for="batch in batches"
+              :key="batch.batch_id"
+              :label="batch.batch_number"
+              :value="batch.batch_id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <div class="person-section">
+          <div class="section-header">
+            <h4>人员信息</h4>
+            <el-button type="primary" size="small" @click="addPersonToBatch">
+              <el-icon><Plus /></el-icon>
+              添加人员
+            </el-button>
+          </div>
+
+          <div v-if="batchForm.persons.length === 0" class="empty-hint">
+            <p>暂无人员，请点击"添加人员"按钮添加</p>
+          </div>
+
+          <div v-for="(person, index) in batchForm.persons" :key="index" class="person-item">
+            <el-card shadow="never" class="person-card">
+              <div class="person-form">
+                <div class="person-inline-row">
+                  <!-- 姓名 -->
+                  <el-form-item
+                    :prop="`persons.${index}.name`"
+                    :rules="personRules.person_name"
+                    label="姓名"
+                    class="inline-form-item"
+                  >
+                    <el-input
+                      v-model="person.name"
+                      placeholder="请输入姓名"
+                      clearable
+                    />
+                  </el-form-item>
+
+                  <!-- 性别 -->
+                  <el-form-item label="性别" class="inline-form-item">
+                    <el-select
+                      v-model="person.gender"
+                      placeholder="请选择"
+                      clearable
+                      style="width: 100%"
+                    >
+                      <el-option label="男" value="Male" />
+                      <el-option label="女" value="Female" />
+                      <el-option label="其他" value="Other" />
+                    </el-select>
+                  </el-form-item>
+
+                  <!-- 年龄 -->
+                  <el-form-item label="年龄" class="inline-form-item">
+                    <el-input
+                      v-model.number="person.age"
+                      type="number"
+                      placeholder="请输入年龄"
+                      :min="1"
+                      :max="120"
+                      clearable
+                    />
+                  </el-form-item>
+                  
+                  <!-- 删除按钮 -->
+                  <el-button type="danger" plain size="small" @click="removePersonFromBatch(index)">
+                    删除
+                  </el-button>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="batchDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleBatchSubmit"
+          >
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { Search, Plus, Download } from '@element-plus/icons-vue'
+import { Search, Plus, Download, Delete } from '@element-plus/icons-vue'
 import { useDataStore, type Person } from '../stores/data'
 import { ApiService } from '../services/api'
 import { useAuthStore } from '../stores/auth'
@@ -199,12 +318,12 @@ const authStore = useAuthStore()
 onMounted(async () => {
   try {
     loading.value = true
-    const [personsData, batchesData] = await Promise.all([
-      ApiService.getPersons(),
-      ApiService.getBatches()
+    
+    // 使用缓存机制加载数据
+    await Promise.all([
+      dataStore.loadPersons(),
+      dataStore.loadBatches()
     ])
-    dataStore.persons = personsData
-    dataStore.batches = batchesData
     
     // 获取批次数据用于表单选择
     batches.value = await ApiService.getBatchesForPerson()
@@ -218,10 +337,15 @@ onMounted(async () => {
 
 const loading = ref(false)
 const dialogVisible = ref(false)
+const batchDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentPersonId = ref<number | null>(null)
 const formRef = ref<FormInstance>()
 const batches = ref<any[]>([])
+const batchForm = ref({
+  batch_id: null,
+  persons: []
+})
 
 // 分页相关
 const {
@@ -256,6 +380,21 @@ const rules = {
   person_name: [
     { required: true, message: '请输入姓名', trigger: 'blur' },
     { min: 2, max: 20, message: '姓名长度在 2 到 20 个字符', trigger: 'blur' }
+  ],
+  gender: [
+    { required: true, message: '请选择性别', trigger: 'change' }
+  ]
+}
+
+const batchRules = {
+  batch_id: [
+    { required: true, message: '请选择批次', trigger: 'change' }
+  ]
+}
+
+const personRules = {
+  person_name: [
+    { required: true, message: '请输入姓名', trigger: 'blur' }
   ],
   gender: [
     { required: true, message: '请选择性别', trigger: 'change' }
@@ -315,8 +454,64 @@ const handleExport = () => {
 // 新建人员
 const handleAdd = () => {
   isEdit.value = false
-  dialogVisible.value = true
   resetForm()
+  dialogVisible.value = true
+}
+
+const handleBatchAdd = () => {
+  resetBatchForm()
+  batchDialogVisible.value = true
+}
+
+const addPersonToBatch = () => {
+  batchForm.value.persons.push({
+    name: '',
+    gender: 'Male',
+    age: undefined
+  })
+}
+
+const removePersonFromBatch = (index: number) => {
+  batchForm.value.persons.splice(index, 1)
+}
+
+const resetBatchForm = () => {
+  batchForm.value = {
+    batch_id: null,
+    persons: []
+  }
+}
+
+const handleBatchSubmit = async () => {
+  if (batchForm.value.persons.length === 0) {
+    ElMessage.warning('请至少添加一位人员')
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    // 批量添加人员
+    for (const person of batchForm.value.persons) {
+      const personData = {
+        ...person,
+        batch_id: batchForm.value.batch_id
+      }
+      await dataStore.addPerson(personData)
+    }
+    
+    ElMessage.success('批量添加人员成功')
+    batchDialogVisible.value = false
+    resetBatchForm()
+    // 重新加载人员数据
+    const personsData = await ApiService.getPersons()
+    dataStore.persons = personsData
+  } catch (error) {
+    console.error('批量添加人员失败:', error)
+    ElMessage.error('批量添加人员失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 编辑人员
@@ -476,5 +671,82 @@ const resetForm = () => {
 :deep(.el-radio-group) {
   display: flex;
   gap: 16px;
+}
+
+.person-section {
+  margin-top: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
+}
+
+.person-item {
+  margin-bottom: 16px;
+}
+
+.person-card {
+  border: 1px solid #e4e7ed;
+}
+
+/* START: NEW/MODIFIED STYLES FOR INLINE FORM */
+.person-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.inline-form-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1; 
+  margin-bottom: 0;
+}
+
+:deep(.inline-form-item .el-form-item__label) {
+  padding: 0;
+  line-height: normal;
+  width: auto !important;
+  color: #606266;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+:deep(.inline-form-item .el-form-item__content) {
+  margin-left: 0 !important;
+  flex: 1;
+}
+
+:deep(.inline-form-item.is-required .el-form-item__label::before) {
+    content: '*';
+    color: var(--el-color-danger);
+    margin-right: 4px;
+}
+/* END: NEW/MODIFIED STYLES */
+
+@media (max-width: 768px) {
+  .person-inline-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
 }
 </style>

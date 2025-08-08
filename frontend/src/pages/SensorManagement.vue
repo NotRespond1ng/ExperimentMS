@@ -79,6 +79,14 @@
           <el-icon><Plus /></el-icon>
           添加传感器
         </el-button>
+        <el-button 
+          :disabled="!authStore.hasModulePermission('sensor_management', 'write')"
+          type="success" 
+          @click="handleBatchAdd"
+        >
+          <el-icon><Plus /></el-icon>
+          批量录入
+        </el-button>
       </div>
     </div>
     
@@ -324,8 +332,158 @@
         </span>
       </template>
     </el-dialog>
-    
 
+    <!-- 批量录入传感器对话框 -->
+    <el-dialog
+      v-model="batchDialogVisible"
+      title="批量录入传感器"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="batchFormRef"
+        :model="batchForm"
+        :rules="batchRules"
+        label-width="100px"
+        label-position="left"
+      >
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="选择批次" prop="batch_id">
+              <el-select
+                v-model="batchForm.batch_id"
+                placeholder="请选择批次"
+                style="width: 100%"
+                clearable
+              >
+                <el-option
+                  v-for="batch in batches"
+                  :key="batch.batch_id"
+                  :label="batch.batch_number"
+                  :value="batch.batch_id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="选择人员" prop="person_id">
+              <el-select
+                v-model="batchForm.person_id"
+                placeholder="请选择人员"
+                style="width: 100%"
+                clearable
+                :disabled="!batchForm.batch_id"
+              >
+                <el-option
+                  v-for="person in filteredPersonsForBatchForm"
+                  :key="person.person_id"
+                  :label="`${person.person_name} (${person.gender === 'Male' ? '男' : person.gender === 'Female' ? '女' : '其他'}, ${person.age}岁)`"
+                  :value="person.person_id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="sensor-section">
+          <div class="section-header">
+            <span>传感器数据</span>
+            <el-button type="primary" size="small" @click="addSensorItem">
+              <el-icon><Plus /></el-icon>
+              添加传感器
+            </el-button>
+          </div>
+
+          <div v-if="batchForm.sensorList.length === 0" class="empty-hint">
+            暂无传感器数据，请点击"添加传感器"按钮添加
+          </div>
+
+          <div
+            v-for="(sensor, index) in batchForm.sensorList"
+            :key="index"
+            class="sensor-item"
+          >
+            <div class="sensor-card">
+              <div class="sensor-header">
+                <span>传感器 {{ index + 1 }}</span>
+                <el-button
+                  type="danger"
+                  size="small"
+                  text
+                  @click="removeSensorItem(index)"
+                  :disabled="batchForm.sensorList.length <= 1"
+                >
+                  <el-icon><Delete /></el-icon>
+                  删除
+                </el-button>
+              </div>
+              <div class="sensor-form">
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item
+                      :prop="`sensorList.${index}.sensor_name`"
+                      :rules="sensorRules.sensor_name"
+                      label="传感器名称"
+                    >
+                      <el-input
+                        v-model="sensor.sensor_name"
+                        placeholder="请输入传感器名称"
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item
+                      :prop="`sensorList.${index}.start_time`"
+                      :rules="sensorRules.start_time"
+                      label="开始时间"
+                    >
+                      <el-date-picker
+                        v-model="sensor.start_time"
+                        type="datetime"
+                        placeholder="请选择开始时间"
+                        style="width: 100%"
+                        format="YYYY-MM-DD HH:mm:ss"
+                        value-format="YYYY-MM-DD HH:mm:ss"
+                      />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item label="结束时间">
+                      <el-date-picker
+                        v-model="sensor.end_time"
+                        type="datetime"
+                        placeholder="请选择结束时间（选填）"
+                        style="width: 100%"
+                        format="YYYY-MM-DD HH:mm:ss"
+                        value-format="YYYY-MM-DD HH:mm:ss"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item label="结束原因">
+                      <el-input
+                        v-model="sensor.end_reason"
+                        placeholder="请输入结束原因（选填）"
+                      />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="batchDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleBatchSubmit">提交</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -339,7 +497,9 @@ import {
   Monitor,
   CircleCheck,
   CircleClose,
-  Clock
+  Clock,
+  Delete,
+  InfoFilled
 } from '@element-plus/icons-vue'
 import { useDataStore, type Sensor, type Person, type Batch } from '../stores/data'
 import { ApiService } from '../services/api'
@@ -383,12 +543,14 @@ const availablePersonsForFilter = computed(() => {
 onMounted(async () => {
   try {
     loading.value = true
+    
+    // 使用缓存机制加载数据
     const [sensorsData, personsData, batchesData] = await Promise.all([
-      ApiService.getSensors(),
-      ApiService.getPersons(),
-      ApiService.getBatches()
+      dataStore.loadSensors(),
+      dataStore.loadPersons(),
+      dataStore.loadBatches()
     ])
-    dataStore.sensors = sensorsData
+    
     persons.value = personsData
     batches.value = batchesData
   } catch (error) {
@@ -404,9 +566,14 @@ const searchKeyword = ref('')
 const filterBatch = ref('')
 const filterPerson = ref('')
 const filterStatus = ref('')
+// 对话框状态
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+
+// 批量录入对话框状态
+const batchDialogVisible = ref(false)
+const batchFormRef = ref<FormInstance>()
 const currentSensor = ref<Sensor | null>(null)
 
 // 分页相关
@@ -422,6 +589,25 @@ const form = reactive({
   end_reason: ''
 })
 
+// 批量录入表单数据
+const batchForm = reactive({
+  batch_id: null as number | null,
+  person_id: null as number | null,
+  sensorList: [
+    {
+      sensor_name: '',
+      start_time: '',
+      end_time: '',
+      end_reason: ''
+    }
+  ] as Array<{
+    sensor_name: string
+    start_time: string
+    end_time: string
+    end_reason: string
+  }>
+})
+
 const rules = computed(() => {
   const baseRules = {
     sensor_name: [
@@ -430,6 +616,7 @@ const rules = computed(() => {
     start_time: [
       { required: true, message: '请选择开始时间', trigger: 'change' }
     ]
+    // end_time 改为选填项，移除验证规则
   }
   
   // 新建模式下需要验证批次和人员
@@ -447,6 +634,27 @@ const rules = computed(() => {
   
   return baseRules
 })
+
+// 批量录入表单验证规则
+const batchRules = {
+  batch_id: [
+    { required: true, message: '请选择批次', trigger: 'change' }
+  ],
+  person_id: [
+    { required: true, message: '请选择人员', trigger: 'change' }
+  ]
+}
+
+// 传感器数据验证规则
+const sensorRules = {
+  sensor_name: [
+    { required: true, message: '请输入传感器名称', trigger: 'blur' },
+    { min: 1, max: 100, message: '传感器名称长度在 1 到 100 个字符', trigger: 'blur' }
+  ],
+  start_time: [
+    { required: true, message: '请选择开始时间', trigger: 'change' }
+  ]
+}
 
 // 根据选择的批次过滤人员（传感器表单）
 const filteredPersonsForSensor = computed(() => {
@@ -468,10 +676,25 @@ const filteredPersonsForSensor = computed(() => {
   return persons.value.filter(person => person.batch_id === form.batch_id)
 })
 
+// 根据选择的批次过滤人员（批量录入表单）
+const filteredPersonsForBatchForm = computed(() => {
+  if (!batchForm.batch_id) {
+    return []
+  }
+  return persons.value.filter(person => person.batch_id === batchForm.batch_id)
+})
+
 // 监听批次选择变化，清空人员选择（传感器表单）
 watch(() => form.batch_id, (newBatchId, oldBatchId) => {
   if (newBatchId !== oldBatchId && !isEdit.value) {
     form.person_id = null
+  }
+})
+
+// 监听批量录入表单批次选择变化，清空人员选择
+watch(() => batchForm.batch_id, (newBatchId, oldBatchId) => {
+  if (newBatchId !== oldBatchId) {
+    batchForm.person_id = null
   }
 })
 
@@ -645,6 +868,48 @@ const handleAdd = () => {
   resetForm()
 }
 
+// 批量录入传感器
+const handleBatchAdd = () => {
+  batchDialogVisible.value = true
+  resetBatchForm()
+}
+
+// 添加传感器项
+const addSensorItem = () => {
+  batchForm.sensorList.push({
+    sensor_name: '',
+    start_time: '',
+    end_time: '',
+    end_reason: ''
+  })
+}
+
+// 删除传感器项
+const removeSensorItem = (index: number) => {
+  if (batchForm.sensorList.length > 1) {
+    batchForm.sensorList.splice(index, 1)
+  }
+}
+
+// 重置批量录入表单
+const resetBatchForm = () => {
+  if (batchFormRef.value) {
+    batchFormRef.value.resetFields()
+  }
+  Object.assign(batchForm, {
+    batch_id: null,
+    person_id: null,
+    sensorList: [
+      {
+        sensor_name: '',
+        start_time: '',
+        end_time: '',
+        end_reason: ''
+      }
+    ]
+  })
+}
+
 // 编辑传感器
 const handleEdit = (row: Sensor) => {
   isEdit.value = true
@@ -700,8 +965,8 @@ const handleSubmit = async () => {
             person_id: form.person_id,
             batch_id: form.batch_id,
             start_time: form.start_time,
-            end_time: form.end_time,
-            end_reason: form.end_reason
+            end_time: form.end_time || null,
+            end_reason: form.end_reason || null
           })
           ElMessage.success('更新成功')
         } else {
@@ -711,8 +976,8 @@ const handleSubmit = async () => {
             person_id: form.person_id,
             batch_id: form.batch_id,
             start_time: form.start_time,
-            end_time: form.end_time,
-            end_reason: form.end_reason
+            end_time: form.end_time || null,
+            end_reason: form.end_reason || null
           })
           ElMessage.success('添加成功')
         }
@@ -722,6 +987,66 @@ const handleSubmit = async () => {
       } catch (error) {
         console.error('Submit failed:', error)
         ElMessage.error(isEdit.value ? '更新失败' : '添加失败')
+      }
+    }
+  })
+}
+
+// 批量提交传感器
+const handleBatchSubmit = async () => {
+  if (!batchFormRef.value) return
+  
+  await batchFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        let successCount = 0
+        let failCount = 0
+        
+        // 验证每个传感器数据项
+        for (let i = 0; i < batchForm.sensorList.length; i++) {
+          const sensor = batchForm.sensorList[i]
+          if (!sensor.sensor_name.trim()) {
+            ElMessage.error(`第${i + 1}个传感器名称不能为空`)
+            return
+          }
+          if (!sensor.start_time) {
+            ElMessage.error(`第${i + 1}个传感器开始时间不能为空`)
+            return
+          }
+        }
+        
+        // 批量添加传感器
+        for (const sensor of batchForm.sensorList) {
+          try {
+            await dataStore.addSensor({
+              sensor_name: sensor.sensor_name,
+              person_id: batchForm.person_id!,
+              batch_id: batchForm.batch_id!,
+              start_time: sensor.start_time,
+              end_time: sensor.end_time || null,
+              end_reason: sensor.end_reason || null
+            })
+            successCount++
+          } catch (error) {
+            console.error('Add sensor failed:', error)
+            failCount++
+          }
+        }
+        
+        if (successCount > 0) {
+          ElMessage.success(`成功添加 ${successCount} 个传感器${failCount > 0 ? `，失败 ${failCount} 个` : ''}`)
+        }
+        if (failCount > 0 && successCount === 0) {
+          ElMessage.error('批量添加失败')
+        }
+        
+        if (successCount > 0) {
+          batchDialogVisible.value = false
+          resetBatchForm()
+        }
+      } catch (error) {
+        console.error('Batch submit failed:', error)
+        ElMessage.error('批量添加失败')
       }
     }
   })
@@ -947,5 +1272,71 @@ watch(() => filterBatch.value, (newBatchId, oldBatchId) => {
   .stats-cards {
     grid-template-columns: 1fr;
   }
+}
+
+/* 批量录入样式 */
+.sensor-section {
+  margin-top: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #909399;
+  padding: 40px 0;
+  font-style: italic;
+}
+
+.sensor-item {
+  margin-bottom: 16px;
+}
+
+.sensor-card {
+  border: 1px solid #EBEEF5;
+  border-radius: 8px;
+  padding: 16px;
+  background: #FAFAFA;
+}
+
+.sensor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.sensor-form {
+  background: white;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.sensor-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.form-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  border-radius: 6px;
+  color: #0369A1;
+  font-size: 14px;
 }
 </style>
