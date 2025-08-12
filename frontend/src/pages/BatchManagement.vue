@@ -237,11 +237,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Search, Plus, Download, Delete } from '@element-plus/icons-vue'
 import { usePagination } from '../composables/usePagination'
-import { useSearch } from '../composables/useFilter'
 import { exportToExcel } from '../utils/excel'
 import { useDataStore, type Batch } from '../stores/data'
 import { ApiService } from '../services/api'
@@ -250,12 +249,30 @@ import { useAuthStore } from '../stores/auth'
 const dataStore = useDataStore()
 const authStore = useAuthStore()
 
+// 页面可见性监听
+const handleVisibilityChange = async () => {
+  if (!document.hidden) {
+    // 页面变为可见时刷新数据
+    try {
+      loading.value = true
+      await dataStore.loadBatches(true)
+    } catch (error) {
+      console.error('Failed to refresh data:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
 // 组件挂载时检查数据是否已加载
 onMounted(async () => {
   try {
     loading.value = true
     // 使用缓存机制加载批次数据
     await dataStore.loadBatches()
+    
+    // 添加页面可见性监听
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   } catch (error) {
     console.error('Failed to load batches:', error)
     ElMessage.error('加载数据失败')
@@ -264,8 +281,13 @@ onMounted(async () => {
   }
 })
 
+// 组件卸载时移除监听器
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
 const loading = ref(false)
-const { searchKeyword: searchText } = useSearch()
+const searchText = ref('')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
@@ -475,6 +497,9 @@ const handleSubmit = async () => {
             // 重新获取批次数据以更新person_count
             const batchesData = await ApiService.getBatches()
             dataStore.batches = batchesData
+            
+            // 清除人员缓存，确保人员管理页面能够获取最新数据
+            dataStore.clearCache('persons')
             
             if (validPersons.length > 0) {
               ElMessage.success(`批次创建成功，已添加 ${validPersons.length} 位人员`)

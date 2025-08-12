@@ -293,8 +293,9 @@ export const useDataStore = defineStore('data', () => {
       // 删除人员后，同样重新加载批次数据
       batches.value = await ApiService.getBatches()
       
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '删除人员失败'
+    } catch (err: any) {
+      // 保留原始错误信息，让前端组件处理详细的错误显示
+      error.value = err?.response?.data?.detail || err?.message || '删除人员失败'
       throw err
     }
   }
@@ -441,6 +442,41 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  // 清除特定数据类型的缓存
+  const clearCache = (dataType: string) => {
+    if (dataType === 'persons') {
+      dataLoaded.value.persons = false
+      delete lastLoadTime.value.persons
+    } else if (dataType === 'batches') {
+      dataLoaded.value.batches = false
+      delete lastLoadTime.value.batches
+    } else if (dataType === 'experiments') {
+      dataLoaded.value.experiments = false
+      delete lastLoadTime.value.experiments
+    } else if (dataType === 'competitorFiles') {
+      dataLoaded.value.competitorFiles = false
+      delete lastLoadTime.value.competitorFiles
+    } else if (dataType === 'fingerBloodData') {
+      dataLoaded.value.fingerBloodData = false
+      delete lastLoadTime.value.fingerBloodData
+    } else if (dataType === 'sensors') {
+      dataLoaded.value.sensors = false
+      delete lastLoadTime.value.sensors
+    } else if (dataType === 'all') {
+      // 清除所有缓存
+      dataLoaded.value = {
+        batches: false,
+        persons: false,
+        experiments: false,
+        competitorFiles: false,
+        fingerBloodData: false,
+        sensors: false,
+        initialized: false
+      }
+      lastLoadTime.value = {}
+    }
+  }
+
   return {
     // 数据
     batches,
@@ -453,6 +489,8 @@ export const useDataStore = defineStore('data', () => {
     loading,
     error,
     dataLoaded,
+    // 缓存管理
+    clearCache,
     // 初始化和数据加载
     initializeData,
     loadAllData,

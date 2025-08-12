@@ -488,7 +488,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import {
   Search,
@@ -539,6 +539,31 @@ const availablePersonsForFilter = computed(() => {
   return persons.value.filter(person => personIds.includes(person.person_id))
 })
 
+// 页面可见性监听
+const handleVisibilityChange = async () => {
+  if (!document.hidden) {
+    // 页面变为可见时，刷新数据
+    try {
+      loading.value = true
+      
+      // 使用缓存机制加载数据
+      const [sensorsData, personsData, batchesData] = await Promise.all([
+        dataStore.loadSensors(),
+        dataStore.loadPersons(),
+        dataStore.loadBatches()
+      ])
+      
+      persons.value = personsData
+      batches.value = batchesData
+    } catch (error) {
+      console.error('Failed to load data:', error)
+      ElMessage.error('加载数据失败')
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
 // 组件挂载时获取最新数据
 onMounted(async () => {
   try {
@@ -559,6 +584,14 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  
+  // 添加页面可见性监听
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// 组件卸载时清理监听器
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 const loading = ref(false)
@@ -982,6 +1015,9 @@ const handleSubmit = async () => {
           ElMessage.success('添加成功')
         }
         
+        // 清除相关缓存
+        dataStore.clearCache('sensors')
+        
         dialogVisible.value = false
         resetForm()
       } catch (error) {
@@ -1041,6 +1077,8 @@ const handleBatchSubmit = async () => {
         }
         
         if (successCount > 0) {
+          // 清除相关缓存
+          dataStore.clearCache('sensors')
           batchDialogVisible.value = false
           resetBatchForm()
         }

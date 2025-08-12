@@ -60,6 +60,221 @@ export function exportToExcel(
 }
 
 /**
+ * Excel导入工具函数
+ */
+
+/**
+ * 从Excel文件导入数据
+ * @param file Excel文件对象
+ * @param expectedColumns 期望的列名数组
+ * @param usePositionMode 是否使用列位置模式（不依赖列名）
+ * @returns Promise<any[]> 解析后的数据数组
+ */
+export function importFromExcel(
+  file: File,
+  expectedColumns?: string[],
+  usePositionMode: boolean = false
+): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader()
+      
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          
+          // 获取第一个工作表
+          const firstSheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[firstSheetName]
+          
+          // 将工作表转换为JSON数据
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1, // 使用数组格式，第一行作为表头
+            defval: '' // 空单元格的默认值
+          }) as any[][]
+          
+          if (jsonData.length === 0) {
+            reject(new Error('Excel文件为空'))
+            return
+          }
+          
+          if (usePositionMode) {
+            // 位置模式：直接返回原始行数据（跳过表头）
+            const dataRows = jsonData.slice(1)
+            
+            // 过滤掉完全空的行
+            const filteredResult = dataRows.filter(row => {
+              const values = row.filter(v => v !== null && v !== undefined && v !== '')
+              return values.length > 0 // 至少有一个有效值
+            })
+            
+            resolve(filteredResult)
+          } else {
+            // 传统模式：按列名转换为对象数组
+            // 获取表头
+            const headers = jsonData[0] as string[]
+            
+            // 验证列名（如果提供了期望的列名）
+            if (expectedColumns && expectedColumns.length > 0) {
+              const missingColumns = expectedColumns.filter(col => !headers.includes(col))
+              if (missingColumns.length > 0) {
+                reject(new Error(`缺少必要的列: ${missingColumns.join(', ')}`))
+                return
+              }
+            }
+            
+            // 转换数据为对象数组
+            const result = jsonData.slice(1).map((row, index) => {
+              const obj: any = {}
+              headers.forEach((header, colIndex) => {
+                if (header && String(header).trim()) {
+                  let value = row[colIndex]
+                  
+                  // 处理空值
+                  if (value === undefined || value === null || value === '') {
+                    value = null
+                  } else if (typeof value === 'string') {
+                    value = value.trim()
+                    // 尝试转换数字
+                    if (!isNaN(Number(value)) && value !== '') {
+                      value = Number(value)
+                    }
+                  }
+                  
+                  obj[String(header).trim()] = value
+                }
+              })
+              
+              // 添加行号用于错误定位
+              obj._rowIndex = index + 2 // +2 因为Excel行号从1开始，且第一行是表头
+              return obj
+            })
+            
+            // 过滤掉完全空的行
+            const filteredResult = result.filter(row => {
+              const values = Object.values(row).filter(v => v !== null && v !== undefined && v !== '')
+              return values.length > 1 // 至少有一个有效值（除了_rowIndex）
+            })
+            
+            resolve(filteredResult)
+          }
+        } catch (parseError) {
+          reject(new Error(`解析Excel文件失败: ${parseError}`))
+        }
+      }
+      
+      reader.onerror = () => {
+        reject(new Error('读取文件失败'))
+      }
+      
+      reader.readAsArrayBuffer(file)
+    } catch (error) {
+      reject(new Error(`导入Excel文件失败: ${error}`))
+    }
+  })
+}
+
+
+
+/**
+ * 按列位置验证导入的传感器详细信息数据
+ * @param data 导入的数据数组（原始行数据）
+ * @returns { valid: any[], invalid: any[] } 验证结果
+ */
+export function validateSensorDetailDataByPosition(data: any[][]): {
+  valid: any[],
+  invalid: any[]
+} {
+  const valid: any[] = []
+  const invalid: any[] = []
+  
+  // 定义期望的列顺序和对应的前端列名（按用户Excel格式：灭菌日期、传感器测试编号、探针编号...）
+  const columnMapping = [
+    { index: 0, field: 'sterilization_date', name: '灭菌日期', required: false },
+    { index: 1, field: 'test_number', name: '传感器测试编号', required: true },
+    { index: 2, field: 'probe_number', name: '探针编号', required: true },
+    { index: 3, field: 'value_0', name: '测试值 (0.00)', required: false, numeric: true },
+    { index: 4, field: 'value_2', name: '测试值 (2.00)', required: false, numeric: true },
+    { index: 5, field: 'value_5', name: '测试值 (5.00)', required: false, numeric: true },
+    { index: 6, field: 'value_25', name: '测试值 (25.00)', required: false, numeric: true },
+    { index: 7, field: 'sensitivity', name: '初始灵敏度', required: false, numeric: true },
+    { index: 8, field: 'r_value', name: 'R值', required: false, numeric: true },
+    { index: 9, field: 'destination', name: '去向', required: false },
+    { index: 10, field: 'remarks', name: '备注', required: false }
+  ]
+  
+  data.forEach((row, rowIndex) => {
+    const errors: string[] = []
+    const normalizedRow: any = {
+      _rowIndex: rowIndex + 2 // +2 因为Excel行号从1开始，且第一行是表头
+    }
+    
+    // 按列位置处理数据
+    columnMapping.forEach(column => {
+      let value = row[column.index]
+      
+      // 处理空值
+      if (value === undefined || value === null || value === '') {
+        value = null
+      } else if (typeof value === 'string') {
+        value = value.trim()
+        // 尝试转换数字
+        if (column.numeric && !isNaN(Number(value)) && value !== '') {
+          value = Number(value)
+        }
+      }
+      
+      // 验证必填字段
+      if (column.required && (value === null || value === undefined || value === '')) {
+        errors.push(`${column.name}不能为空`)
+      }
+      
+      // 验证数值字段
+      if (column.numeric && value !== null && value !== undefined && value !== '') {
+        if (isNaN(Number(value))) {
+          errors.push(`${column.name}必须是数字`)
+        }
+      }
+      
+      // 特殊处理日期格式
+      if (column.field === 'sterilization_date' && value && typeof value === 'string') {
+        // 只处理有效的日期格式（YYYY.MM.DD 或 YYYY-MM-DD 或 YYYY/MM/DD）
+        const datePattern = /^\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2}$/
+        if (datePattern.test(value)) {
+          // 将 "YYYY.MM.DD" 或 "YYYY/MM/DD" 格式转换为 "YYYY-MM-DD" 格式
+          value = value.replace(/[.\/]/g, '-')
+        } else {
+          // 对于无效的日期格式（如 "B070905"），设置为 null
+          value = null
+        }
+      }
+      
+      // 验证R值范围
+      if (column.field === 'r_value' && value !== null && value !== undefined && value !== '') {
+        const numRValue = Number(value)
+        if (!isNaN(numRValue) && (numRValue < 0 || numRValue > 1)) {
+          errors.push('R值必须在0-1之间')
+        }
+      }
+      
+      normalizedRow[column.field] = value
+    })
+    
+    if (errors.length === 0) {
+      valid.push(normalizedRow)
+    } else {
+      invalid.push({
+        ...normalizedRow,
+        _errors: errors
+      })
+    }
+  })
+  
+  return { valid, invalid }
+}
+
+/**
  * 批量导出多个工作表到一个Excel文件
  * @param sheets 工作表数组，每个元素包含 { data, name }
  * @param filename 文件名（不包含扩展名）

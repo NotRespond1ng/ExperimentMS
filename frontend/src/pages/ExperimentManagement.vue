@@ -230,7 +230,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Search, Plus, Download, User, UserFilled } from '@element-plus/icons-vue'
 import { useDataStore, type Experiment } from '../stores/data'
@@ -244,6 +244,25 @@ import { exportToExcel } from '@/utils/excel'
 const dataStore = useDataStore()
 const authStore = useAuthStore()
 
+// 页面可见性监听
+const handleVisibilityChange = async () => {
+  if (!document.hidden) {
+    // 页面变为可见时刷新数据
+    try {
+      loading.value = true
+      await Promise.all([
+        dataStore.loadExperiments(true),
+        dataStore.loadPersons(true),
+        dataStore.loadBatches(true)
+      ])
+    } catch (error) {
+      console.error('Failed to refresh data:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
 // 组件挂载时获取最新数据
 onMounted(async () => {
   try {
@@ -255,12 +274,20 @@ onMounted(async () => {
       dataStore.loadPersons(),
       dataStore.loadBatches()
     ])
+    
+    // 添加页面可见性监听
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   } catch (error) {
     console.error('Failed to load data:', error)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
+})
+
+// 组件卸载时移除监听器
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 const loading = ref(false)
@@ -442,9 +469,9 @@ const handleDelete = async (row: Experiment) => {
     loading.value = true
     await ApiService.deleteExperiment(row.experiment_id)
     
-    // 重新加载数据
-    const experimentsData = await ApiService.getExperiments()
-    dataStore.experiments = experimentsData
+    // 清除相关缓存并重新加载数据
+    dataStore.clearCache('experiments')
+    await dataStore.loadExperiments(true)
     
     ElMessage.success('删除成功')
   } catch (error) {
@@ -484,9 +511,9 @@ const handleSubmit = async () => {
           ElMessage.success('创建成功')
         }
         
-        // 重新加载数据
-        const experimentsData = await ApiService.getExperiments()
-        dataStore.experiments = experimentsData
+        // 清除相关缓存并重新加载数据
+        dataStore.clearCache('experiments')
+        await dataStore.loadExperiments(true)
         
         dialogVisible.value = false
         resetForm()

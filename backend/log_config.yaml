@@ -53,11 +53,17 @@ loggers:
     handlers: [access] # 使用我们定义的 access handler
     propagate: no
 
-  # 新增：控制 SQLAlchemy 的日志记录器
+  # 控制 SQLAlchemy 的日志记录器
   sqlalchemy.engine:
     level: WARNING # 设置为 WARNING 来避免记录每一条 SQL (INFO)，减少日志噪音
     handlers: [default] # 将其输出重定向到文件
     propagate: no # 防止重复记录
+  
+  # 新增：控制 watchfiles 的日志，解决 --reload 模式下日志过多的问题
+  watchfiles:
+    level: WARNING # 设置为 WARNING，只记录警告及以上级别的日志
+    handlers: [default]
+    propagate: no
 
 # 根日志记录器配置
 root:

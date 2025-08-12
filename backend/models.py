@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, DECIMAL, Enum, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Text, DECIMAL, Enum, ForeignKey, Boolean, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -22,6 +22,8 @@ class ModuleEnum(enum.Enum):
     COMPETITOR_DATA = "competitor_data"
     FINGER_BLOOD_DATA = "finger_blood_data"
     SENSOR_DATA = "sensor_data"
+    SENSOR_DETAILS = "sensor_details"
+    WEAR_RECORDS = "wear_records"
 
 class Batch(Base):
     __tablename__ = "batches"
@@ -156,3 +158,42 @@ class ExperimentMember(Base):
     # 关系
     experiment = relationship("Experiment", back_populates="members")
     person = relationship("Person", back_populates="experiment_members")
+
+class SensorDetail(Base):
+    __tablename__ = "sensor_details"
+    
+    sensor_detail_id = Column(Integer, primary_key=True, index=True, comment="传感器详细信息唯一标识符")
+    sterilization_date = Column(Date, nullable=True, comment="灭菌日期")
+    test_number = Column(String(100), unique=True, nullable=False, comment="传感器测试编号")
+    probe_number = Column(String(100), unique=True, nullable=False, comment="探针编号")
+    value_0 = Column(DECIMAL(10, 4), nullable=True, comment="在 0.00 浓度下的响应值")
+    value_2 = Column(DECIMAL(10, 4), nullable=True, comment="在 2.00 浓度下的响应值")
+    value_5 = Column(DECIMAL(10, 4), nullable=True, comment="在 5.00 浓度下的响应值")
+    value_25 = Column(DECIMAL(10, 4), nullable=True, comment="在 25.00 浓度下的响应值")
+    sensitivity = Column(DECIMAL(20, 10), nullable=True, comment="线性灵敏度(未带温度)")
+    r_value = Column(DECIMAL(20, 10), nullable=True, comment="相关系数 R")
+    destination = Column(String(255), nullable=True, comment="去向")
+    remarks = Column(String(255), nullable=True, comment="备注")
+    created_time = Column(DateTime, nullable=False, default=datetime.now, comment="记录创建时间")
+    
+    # 关系
+    wear_records = relationship("WearRecord", back_populates="sensor_detail")
+
+class WearRecord(Base):
+    __tablename__ = "wear_records"
+    
+    wear_record_id = Column(Integer, primary_key=True, index=True, comment="佩戴记录唯一标识符")
+    batch_id = Column(Integer, ForeignKey("batches.batch_id"), nullable=False, comment="关联的批次ID")
+    person_id = Column(Integer, ForeignKey("persons.person_id"), nullable=False, comment="关联的人员ID")
+    sensor_detail_id = Column(Integer, ForeignKey("sensor_details.sensor_detail_id"), nullable=False, comment="关联的传感器ID")
+    applicator_lot_no = Column(String(255), nullable=True, comment="敷贴器批号")
+    sensor_lot_no = Column(String(255), nullable=True, comment="传感器批号")
+    sensor_batch = Column(String(255), nullable=True, comment="传感器批次")
+    sensor_number = Column(String(255), nullable=True, comment="传感器号")
+    transmitter_id = Column(String(255), nullable=True, comment="发射器号")
+    wear_time = Column(DateTime, nullable=False, default=datetime.now, comment="佩戴记录创建时间")
+    
+    # 关系
+    batch = relationship("Batch")
+    person = relationship("Person")
+    sensor_detail = relationship("SensorDetail", back_populates="wear_records")

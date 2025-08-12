@@ -71,6 +71,22 @@
           </el-menu-item>
           
           <el-menu-item 
+            v-if="hasPermission('sensor_details')"
+            index="/sensor-details"
+          >
+            <el-icon><CircleCheck /></el-icon>
+            <template #title>传感器详细信息</template>
+          </el-menu-item>
+          
+          <el-menu-item 
+            v-if="hasPermission('wear_records')"
+            index="/wear-records"
+          >
+            <el-icon><Calendar /></el-icon>
+            <template #title>佩戴记录</template>
+          </el-menu-item>
+          
+          <el-menu-item 
             v-if="authStore.isAdmin"
             index="/users"
           >
@@ -135,6 +151,8 @@ import {
   Document,
   TrendCharts,
   Monitor,
+  CircleCheck,
+  Calendar,
   Expand,
   Fold,
   Avatar,

@@ -300,14 +300,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Search, Plus, Download, Delete } from '@element-plus/icons-vue'
 import { useDataStore, type Person } from '../stores/data'
 import { ApiService } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { usePagination } from '@/composables/usePagination'
-import { useSearch } from '@/composables/useFilter'
 import { getBatchNumber, formatDateTime } from '@/utils/formatters'
 import { exportToExcel } from '@/utils/excel'
 
@@ -335,6 +334,29 @@ onMounted(async () => {
   }
 })
 
+// 页面可见性监听，当页面重新获得焦点时刷新数据
+const handleVisibilityChange = async () => {
+  if (!document.hidden) {
+    // 页面重新获得焦点时，强制刷新人员数据
+    try {
+      await dataStore.loadPersons(true) // force = true
+      batches.value = await ApiService.getBatchesForPerson()
+    } catch (error) {
+      console.error('Failed to refresh data:', error)
+    }
+  }
+}
+
+// 添加页面可见性监听器
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// 移除监听器
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
 const loading = ref(false)
 const dialogVisible = ref(false)
 const batchDialogVisible = ref(false)
@@ -359,8 +381,10 @@ const {
 } = usePagination()
 
 // 搜索相关
-const { searchKeyword, handleSearch } = useSearch(resetPagination)
-const searchText = searchKeyword
+const searchText = ref('')
+const handleSearch = () => {
+  resetPagination()
+}
 
 const form = reactive({
   person_id: 0,
@@ -536,10 +560,12 @@ const handleDelete = async (row: Person) => {
     
     await dataStore.deletePerson(row.person_id)
     ElMessage.success('删除成功')
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
       console.error('Delete failed:', error)
-      ElMessage.error('删除失败')
+      // 从错误响应中提取详细错误信息
+      const errorMessage = error?.response?.data?.detail || error?.message || '删除失败'
+      ElMessage.error(errorMessage)
     }
   }
 }

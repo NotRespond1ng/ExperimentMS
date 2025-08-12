@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from database import get_db
-from models import Person, Batch, User
+from models import Person, Batch, User, ExperimentMember, WearRecord
 from schemas import PersonCreate, PersonUpdate, PersonResponse, MessageResponse, BatchResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -104,9 +104,38 @@ def delete_person(
     if not db_person:
         raise HTTPException(status_code=404, detail="人员不存在")
     
-    # 检查是否有关联的实验、文件等
-    if db_person.experiments or db_person.competitor_files or db_person.finger_blood_files or db_person.sensors:
-        raise HTTPException(status_code=400, detail="该人员下还有关联数据，无法删除")
+    # 检查是否有关联的数据，并统计数量
+    error_details = []
+    
+    # 检查实验成员关联
+    experiment_members_count = db.query(ExperimentMember).filter(ExperimentMember.person_id == person_id).count()
+    if experiment_members_count > 0:
+        error_details.append(f"实验记录{experiment_members_count}条")
+    
+    # 检查佩戴记录关联
+    wear_records_count = db.query(WearRecord).filter(WearRecord.person_id == person_id).count()
+    if wear_records_count > 0:
+        error_details.append(f"佩戴记录{wear_records_count}条")
+    
+    # 检查竞品文件关联
+    competitor_files_count = len(db_person.competitor_files) if db_person.competitor_files else 0
+    if competitor_files_count > 0:
+        error_details.append(f"竞品文件{competitor_files_count}个")
+    
+    # 检查指血文件关联
+    finger_blood_files_count = len(db_person.finger_blood_files) if db_person.finger_blood_files else 0
+    if finger_blood_files_count > 0:
+        error_details.append(f"指血文件{finger_blood_files_count}个")
+    
+    # 检查传感器关联
+    sensors_count = len(db_person.sensors) if db_person.sensors else 0
+    if sensors_count > 0:
+        error_details.append(f"传感器{sensors_count}个")
+    
+    # 如果有关联数据，返回详细错误信息
+    if error_details:
+        detail_message = f"无法删除该人员，存在以下关联数据：{', '.join(error_details)}"
+        raise HTTPException(status_code=400, detail=detail_message)
     
     db.delete(db_person)
     db.commit()

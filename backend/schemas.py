@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 
 # 基础配置类，统一datetime格式
@@ -157,6 +157,56 @@ class SensorResponse(SensorBase):
     sensor_id: int
     person_name: Optional[str] = None
     batch_number: Optional[str] = None
+
+# 传感器详细信息相关模式
+class SensorDetailBase(BaseModelWithConfig):
+    sterilization_date: Optional[date] = None
+    test_number: str
+    probe_number: str
+    value_0: Optional[float] = None
+    value_2: Optional[float] = None
+    value_5: Optional[float] = None
+    value_25: Optional[float] = None
+    sensitivity: Optional[float] = None
+    r_value: Optional[float] = None
+    destination: Optional[str] = None
+    remarks: Optional[str] = None
+
+class SensorDetailCreate(SensorDetailBase):
+    pass
+
+class SensorDetailUpdate(SensorDetailBase):
+    pass
+
+class SensorDetailResponse(SensorDetailBase):
+    sensor_detail_id: int
+    created_time: datetime
+
+# 佩戴记录相关模式
+class WearRecordBase(BaseModelWithConfig):
+    batch_id: int
+    person_id: int
+    sensor_detail_id: int
+    applicator_lot_no: Optional[str] = None
+    sensor_lot_no: Optional[str] = None
+    sensor_batch: Optional[str] = None
+    sensor_number: Optional[str] = None
+    transmitter_id: Optional[str] = None
+
+class WearRecordCreate(WearRecordBase):
+    wear_time: Optional[datetime] = None
+
+class WearRecordUpdate(WearRecordBase):
+    wear_time: Optional[datetime] = None
+
+class WearRecordResponse(WearRecordBase):
+    wear_record_id: int
+    wear_time: datetime
+    person_name: Optional[str] = None
+    batch_number: Optional[str] = None
+    test_number: Optional[str] = None
+    probe_number: Optional[str] = None
+    sensor_detail: Optional[SensorDetailResponse] = None
 
 # 通用响应模式
 class MessageResponse(BaseModel):

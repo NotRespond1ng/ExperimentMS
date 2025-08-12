@@ -11,6 +11,8 @@ import ExperimentManagement from '../pages/ExperimentManagement.vue'
 import CompetitorData from '../pages/CompetitorData.vue'
 import FingerBloodData from '../pages/FingerBloodData.vue'
 import SensorManagement from '../pages/SensorManagement.vue'
+import SensorDetailManagement from '../pages/SensorDetailManagement.vue'
+import WearRecordManagement from '../pages/WearRecordManagement.vue'
 import UserManagement from '../pages/UserManagement.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -101,6 +103,26 @@ const routes: RouteRecordRaw[] = [
           title: '传感器管理',
           icon: 'Monitor',
           module: 'sensor_data'
+        }
+      },
+      {
+        path: 'sensor-details',
+        name: 'SensorDetailManagement',
+        component: SensorDetailManagement,
+        meta: {
+          title: '传感器详细信息',
+          icon: 'Setting',
+          module: 'sensor_details'
+        }
+      },
+      {
+        path: 'wear-records',
+        name: 'WearRecordManagement',
+        component: WearRecordManagement,
+        meta: {
+          title: '佩戴记录管理',
+          icon: 'Connection',
+          module: 'wear_records'
         }
       },
       {

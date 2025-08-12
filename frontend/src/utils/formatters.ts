@@ -24,18 +24,21 @@ export function getPersonName(personId: number): string {
 
 /**
  * 格式化日期时间
- * 统一输出格式：YYYY-MM-DD HH:mm:ss（不带T）
+ * 统一输出格式：YYYY-MM-DD HH:mm:ss（北京时间）
  */
 export function formatDateTime(dateTime: string | Date): string {
   if (!dateTime) return ''
   const date = new Date(dateTime)
   
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
+  // 转换为北京时间（UTC+8）
+  const beijingTime = new Date(date.getTime() + (8 * 60 * 60 * 1000))
+  
+  const year = beijingTime.getUTCFullYear()
+  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(beijingTime.getUTCDate()).padStart(2, '0')
+  const hours = String(beijingTime.getUTCHours()).padStart(2, '0')
+  const minutes = String(beijingTime.getUTCMinutes()).padStart(2, '0')
+  const seconds = String(beijingTime.getUTCSeconds()).padStart(2, '0')
   
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
@@ -45,11 +48,16 @@ export function formatDateTime(dateTime: string | Date): string {
  */
 export function formatDate(date: string | Date): string {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
+  const dateObj = new Date(date)
+  
+  // 转换为北京时间（UTC+8）
+  const beijingTime = new Date(dateObj.getTime() + (8 * 60 * 60 * 1000))
+  
+  const year = beijingTime.getUTCFullYear()
+  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(beijingTime.getUTCDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
 }
 
 /**

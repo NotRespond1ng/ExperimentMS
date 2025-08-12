@@ -96,6 +96,39 @@ export interface Sensor {
   batch_number?: string
 }
 
+export interface SensorDetail {
+  sensor_detail_id: number
+  sterilization_date?: string
+  test_number: string
+  probe_number: string
+  value_0?: number
+  value_2?: number
+  value_5?: number
+  value_25?: number
+  sensitivity?: number
+  r_value?: number
+  destination?: string
+  remarks?: string
+  created_time?: string
+}
+
+export interface WearRecord {
+  wear_record_id: number
+  batch_id: number
+  person_id: number
+  sensor_detail_id: number
+  applicator_lot_no?: string  // 敷贴器批号
+  sensor_lot_no?: string      // 传感器批号
+  sensor_batch?: string       // 传感器批次
+  sensor_number?: string      // 传感器号
+  transmitter_id?: string     // 发射器号
+  wear_time?: string
+  batch_number?: string
+  person_name?: string
+  sensor_detail?: SensorDetail
+  remarks?: string
+}
+
 // API服务类
 export class ApiService {
   // 用户认证管理
@@ -299,6 +332,51 @@ export class ApiService {
 
   static async deleteSensor(id: number): Promise<void> {
     await api.delete(`/api/sensors/${id}`)
+  }
+
+  // 传感器详细信息管理
+  static async getSensorDetails(): Promise<SensorDetail[]> {
+    const response = await api.get('/api/sensor-details/')
+    return response.data
+  }
+
+  static async createSensorDetail(sensorDetail: Omit<SensorDetail, 'sensor_detail_id' | 'created_time'>): Promise<SensorDetail> {
+    const response = await api.post('/api/sensor-details/', sensorDetail)
+    return response.data
+  }
+
+  static async updateSensorDetail(id: number, sensorDetail: Partial<SensorDetail>): Promise<SensorDetail> {
+    const response = await api.put(`/api/sensor-details/${id}`, sensorDetail)
+    return response.data
+  }
+
+  static async deleteSensorDetail(id: number): Promise<void> {
+    await api.delete(`/api/sensor-details/${id}`)
+  }
+
+  // 佩戴记录管理
+  static async getWearRecords(): Promise<WearRecord[]> {
+    const response = await api.get('/api/wear-records/')
+    return response.data
+  }
+
+  static async createWearRecord(wearRecord: Omit<WearRecord, 'wear_record_id' | 'wear_time' | 'batch_number' | 'person_name' | 'sensor_detail'>): Promise<WearRecord> {
+    const response = await api.post('/api/wear-records/', wearRecord)
+    return response.data
+  }
+
+  static async updateWearRecord(id: number, wearRecord: Partial<WearRecord>): Promise<WearRecord> {
+    const response = await api.put(`/api/wear-records/${id}`, wearRecord)
+    return response.data
+  }
+
+  static async deleteWearRecord(id: number): Promise<void> {
+    await api.delete(`/api/wear-records/${id}`)
+  }
+
+  static async getUsedSensors(): Promise<number[]> {
+    const response = await api.get('/api/wear-records/used-sensors')
+    return response.data
   }
 
   // 活动记录管理
