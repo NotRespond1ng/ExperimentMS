@@ -28960,3 +28960,39 @@ FROM activities LEFT OUTER JOIN users ON activities.user_id = users.user_id ORDE
 INFO:     2025-08-12 23:23:28 - sqlalchemy.engine.Engine - [cached since 2.368e+04s ago] {'param_1': 0, 'param_2': 5}
 INFO:     2025-08-12 23:23:28 - 127.0.0.1:5380 - "GET /api/activities/?limit=5 HTTP/1.1" 200 OK
 INFO:     2025-08-12 23:23:28 - sqlalchemy.engine.Engine - ROLLBACK
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - BEGIN (implicit)
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - SELECT users.user_id AS users_user_id, users.username AS users_username, users.password_hash AS users_password_hash, users.`role` AS users_role, users.`createTime` AS `users_createTime`, users.`updateTime` AS `users_updateTime` 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - [cached since 2.377e+04s ago] {'username_1': 'admin', 'param_1': 1}
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - SELECT activities.activity_id AS activities_activity_id, activities.activity_type AS activities_activity_type, activities.description AS activities_description, activities.`createTime` AS `activities_createTime`, activities.user_id AS activities_user_id, users.username AS users_username 
+FROM activities LEFT OUTER JOIN users ON activities.user_id = users.user_id ORDER BY activities.`createTime` DESC 
+ LIMIT %(param_1)s, %(param_2)s
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - [cached since 2.374e+04s ago] {'param_1': 0, 'param_2': 5}
+INFO:     2025-08-12 23:24:27 - 127.0.0.1:5874 - "GET /api/activities/?limit=5 HTTP/1.1" 200 OK
+INFO:     2025-08-12 23:24:27 - sqlalchemy.engine.Engine - ROLLBACK
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - BEGIN (implicit)
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - SELECT users.user_id AS users_user_id, users.username AS users_username, users.password_hash AS users_password_hash, users.`role` AS users_role, users.`createTime` AS `users_createTime`, users.`updateTime` AS `users_updateTime` 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - [cached since 2.383e+04s ago] {'username_1': 'admin', 'param_1': 1}
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - SELECT activities.activity_id AS activities_activity_id, activities.activity_type AS activities_activity_type, activities.description AS activities_description, activities.`createTime` AS `activities_createTime`, activities.user_id AS activities_user_id, users.username AS users_username 
+FROM activities LEFT OUTER JOIN users ON activities.user_id = users.user_id ORDER BY activities.`createTime` DESC 
+ LIMIT %(param_1)s, %(param_2)s
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - [cached since 2.38e+04s ago] {'param_1': 0, 'param_2': 5}
+INFO:     2025-08-12 23:25:28 - 127.0.0.1:6116 - "GET /api/activities/?limit=5 HTTP/1.1" 200 OK
+INFO:     2025-08-12 23:25:28 - sqlalchemy.engine.Engine - ROLLBACK
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - BEGIN (implicit)
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - SELECT users.user_id AS users_user_id, users.username AS users_username, users.password_hash AS users_password_hash, users.`role` AS users_role, users.`createTime` AS `users_createTime`, users.`updateTime` AS `users_updateTime` 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - [cached since 2.39e+04s ago] {'username_1': 'admin', 'param_1': 1}
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - SELECT activities.activity_id AS activities_activity_id, activities.activity_type AS activities_activity_type, activities.description AS activities_description, activities.`createTime` AS `activities_createTime`, activities.user_id AS activities_user_id, users.username AS users_username 
+FROM activities LEFT OUTER JOIN users ON activities.user_id = users.user_id ORDER BY activities.`createTime` DESC 
+ LIMIT %(param_1)s, %(param_2)s
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - [cached since 2.387e+04s ago] {'param_1': 0, 'param_2': 5}
+INFO:     2025-08-12 23:26:40 - 127.0.0.1:6412 - "GET /api/activities/?limit=5 HTTP/1.1" 200 OK
+INFO:     2025-08-12 23:26:40 - sqlalchemy.engine.Engine - ROLLBACK
