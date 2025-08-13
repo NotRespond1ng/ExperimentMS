@@ -197,3 +197,18 @@ class WearRecord(Base):
     batch = relationship("Batch")
     person = relationship("Person")
     sensor_detail = relationship("SensorDetail", back_populates="wear_records")
+
+class DailyExperimentData(Base):
+    __tablename__ = "daily_experiment_data"
+    
+    data_id = Column(Integer, primary_key=True, index=True, comment="数据唯一标识符")
+    person_id = Column(Integer, ForeignKey("persons.person_id", ondelete="CASCADE"), nullable=False, comment="关联的人员ID (外键, 关联persons.person_id)")
+    batch_id = Column(Integer, ForeignKey("batches.batch_id", ondelete="CASCADE"), nullable=False, comment="关联的批次ID (外键, 关联batches.batch_id)")
+    experiment_day = Column(Integer, nullable=False, comment="实验天数 (例如: 1, 2, 3...)")
+    mard_value = Column(DECIMAL(10, 5), nullable=True, comment="当天的MARD值")
+    pard_value = Column(DECIMAL(10, 5), nullable=True, comment="当天的PARD值")
+    record_date = Column(Date, nullable=False, comment="记录的实际日期")
+    
+    # 关系
+    person = relationship("Person")
+    batch = relationship("Batch")

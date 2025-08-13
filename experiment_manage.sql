@@ -11,7 +11,7 @@
  Target Server Version : 80034
  File Encoding         : 65001
 
- Date: 12/08/2025 23:26:37
+ Date: 13/08/2025 17:53:20
 */
 
 SET NAMES utf8mb4;
@@ -97,6 +97,44 @@ CREATE TABLE `competitor_files`  (
 -- Records of competitor_files
 -- ----------------------------
 INSERT INTO `competitor_files` VALUES (14, 35, 9, 'D:\\Trae_Projects\\ExprimentMS\\backend\\uploads\\competitor_files\\伍珊珊-数据图谱(血糖版).xlsx', '2025-08-07 19:59:25');
+
+-- ----------------------------
+-- Table structure for daily_experiment_data
+-- ----------------------------
+DROP TABLE IF EXISTS `daily_experiment_data`;
+CREATE TABLE `daily_experiment_data`  (
+  `data_id` int NOT NULL AUTO_INCREMENT COMMENT '数据唯一标识符',
+  `person_id` int NOT NULL COMMENT '关联的人员ID (外键, 关联persons.person_id)',
+  `batch_id` int NOT NULL COMMENT '关联的批次ID (外键, 关联batches.batch_id)',
+  `experiment_day` int NOT NULL COMMENT '实验天数 (例如: 1, 2, 3...)',
+  `mard_value` decimal(10, 5) NULL DEFAULT NULL COMMENT '当天的MARD值',
+  `pard_value` decimal(10, 5) NULL DEFAULT NULL COMMENT '当天的PARD值',
+  `record_date` date NOT NULL COMMENT '记录的实际日期',
+  PRIMARY KEY (`data_id`) USING BTREE,
+  UNIQUE INDEX `uk_person_day`(`person_id` ASC, `experiment_day` ASC) USING BTREE,
+  INDEX `idx_batch_person`(`batch_id` ASC, `person_id` ASC) USING BTREE,
+  CONSTRAINT `daily_experiment_data_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `daily_experiment_data_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '每日体内实验数据记录表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of daily_experiment_data
+-- ----------------------------
+INSERT INTO `daily_experiment_data` VALUES (1, 1, 1, 1, 12.34567, 15.12345, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (2, 1, 1, 2, 11.98765, 14.87654, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (3, 1, 1, 3, 12.11111, 14.99999, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (4, 1, 1, 4, 12.55500, 15.33300, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (5, 1, 1, 5, 11.80000, 14.50000, '2024-07-24');
+INSERT INTO `daily_experiment_data` VALUES (6, 2, 2, 1, 9.87654, 11.23456, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (7, 2, 2, 2, 10.12345, 11.54321, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (8, 2, 2, 3, 9.99999, 11.11111, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (9, 2, 2, 4, 10.30000, 11.80000, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (10, 2, 2, 5, NULL, 11.40000, '2024-07-24');
+INSERT INTO `daily_experiment_data` VALUES (11, 3, 3, 1, 14.50000, 18.20000, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (12, 3, 3, 2, 14.25000, 17.95000, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (13, 3, 3, 3, 14.65000, 18.55000, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (14, 3, 3, 4, 14.80000, NULL, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (15, 3, 3, 5, 14.10000, 17.80000, '2024-07-24');
 
 -- ----------------------------
 -- Table structure for experiment_members
@@ -275,7 +313,7 @@ CREATE TABLE `sensor_details`  (
   PRIMARY KEY (`sensor_detail_id`) USING BTREE,
   UNIQUE INDEX `uk_test_number`(`test_number` ASC) USING BTREE,
   UNIQUE INDEX `uk_probe_number`(`probe_number` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 59 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器详细信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 60 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器详细信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sensor_details
@@ -302,6 +340,7 @@ INSERT INTO `sensor_details` VALUES (55, '2024-10-09', '20240909-15#', 'E091902'
 INSERT INTO `sensor_details` VALUES (56, '2024-10-09', '20240909-33#', 'F091905', 0.0000, 4.8400, 11.8200, 51.2300, 2.3100000000, 0.9975000000, NULL, '备用', '2025-08-12 17:00:25');
 INSERT INTO `sensor_details` VALUES (57, '2024-10-09', '20240909-31#', 'F091903', 0.0000, 4.9300, 12.0600, 52.6100, 2.3000000000, 0.9969000000, NULL, '备用', '2025-08-12 17:00:27');
 INSERT INTO `sensor_details` VALUES (58, '2024-10-09', '20240909-60＃', 'D091906', 0.0000, 4.9400, 12.0400, 51.5200, 2.3200000000, 0.9975000000, '哈哈哈哈', '备用', '2025-08-12 17:00:27');
+INSERT INTO `sensor_details` VALUES (59, '2025-08-13', '12313', '3211', 12.0000, 21.0000, 21.0000, 21.0000, 41.0000000000, 0.5000000000, '', '测试', '2025-08-13 17:10:25');
 
 -- ----------------------------
 -- Table structure for sensors
@@ -411,7 +450,7 @@ CREATE TABLE `wear_records`  (
   CONSTRAINT `fk_wear_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_person` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of wear_records
@@ -420,6 +459,9 @@ INSERT INTO `wear_records` VALUES (14, 1, 1, 1, '1', '2', '3', '4', '5', '2025-0
 INSERT INTO `wear_records` VALUES (15, 1, 1, 3, '141', '124', '124', '214', '412', '2025-08-08 15:33:54');
 INSERT INTO `wear_records` VALUES (16, 1, 1, 2, '421', '412', '41', '421', '42', '2025-08-08 15:33:54');
 INSERT INTO `wear_records` VALUES (17, 1, 1, 4, 'e12', '312', '321', '31', '231', '2025-08-12 03:22:30');
+INSERT INTO `wear_records` VALUES (18, 1, 2, 59, '1', '2', '3', '4', '5', '2025-08-13 17:10:36');
+INSERT INTO `wear_records` VALUES (19, 1, 2, 58, '5', '6', '62', '362', '623', '2025-08-13 17:10:36');
+INSERT INTO `wear_records` VALUES (20, 2, 24, 41, '1', '2', '3', '4', '5', '2025-08-13 17:19:15');
 
 -- ----------------------------
 -- Triggers structure for table persons

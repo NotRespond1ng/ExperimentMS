@@ -129,6 +129,27 @@ export interface WearRecord {
   remarks?: string
 }
 
+export interface DailyExperimentData {
+  data_id?: number;
+  person_id: number;
+  batch_id: number;
+  experiment_day: number;
+  mard_value?: number;
+  pard_value?: number;
+  record_date: string;
+}
+
+export interface ExperimentDataSummary {
+  daily_data: DailyExperimentData[];
+  avg_mard: number;
+  avg_pard: number;
+}
+
+export interface UploadResponse {
+  message: string;
+  processed_rows: number;
+}
+
 // API服务类
 export class ApiService {
   // 用户认证管理
@@ -336,46 +357,88 @@ export class ApiService {
 
   // 传感器详细信息管理
   static async getSensorDetails(): Promise<SensorDetail[]> {
-    const response = await api.get('/api/sensor-details/')
+    const response = await api.get('/api/sensorDetails/')
     return response.data
   }
 
   static async createSensorDetail(sensorDetail: Omit<SensorDetail, 'sensor_detail_id' | 'created_time'>): Promise<SensorDetail> {
-    const response = await api.post('/api/sensor-details/', sensorDetail)
+    const response = await api.post('/api/sensorDetails/', sensorDetail)
     return response.data
   }
 
   static async updateSensorDetail(id: number, sensorDetail: Partial<SensorDetail>): Promise<SensorDetail> {
-    const response = await api.put(`/api/sensor-details/${id}`, sensorDetail)
+    const response = await api.put(`/api/sensorDetails/${id}`, sensorDetail)
     return response.data
   }
 
   static async deleteSensorDetail(id: number): Promise<void> {
-    await api.delete(`/api/sensor-details/${id}`)
+    await api.delete(`/api/sensorDetails/${id}`)
   }
 
   // 佩戴记录管理
   static async getWearRecords(): Promise<WearRecord[]> {
-    const response = await api.get('/api/wear-records/')
+    const response = await api.get('/api/wearRecords/')
     return response.data
   }
 
   static async createWearRecord(wearRecord: Omit<WearRecord, 'wear_record_id' | 'wear_time' | 'batch_number' | 'person_name' | 'sensor_detail'>): Promise<WearRecord> {
-    const response = await api.post('/api/wear-records/', wearRecord)
+    const response = await api.post('/api/wearRecords/', wearRecord)
     return response.data
   }
 
   static async updateWearRecord(id: number, wearRecord: Partial<WearRecord>): Promise<WearRecord> {
-    const response = await api.put(`/api/wear-records/${id}`, wearRecord)
+    const response = await api.put(`/api/wearRecords/${id}`, wearRecord)
     return response.data
   }
 
   static async deleteWearRecord(id: number): Promise<void> {
-    await api.delete(`/api/wear-records/${id}`)
+    await api.delete(`/api/wearRecords/${id}`)
   }
 
   static async getUsedSensors(): Promise<number[]> {
-    const response = await api.get('/api/wear-records/used-sensors')
+    const response = await api.get('/api/wearRecords/used-sensors')
+    return response.data
+  }
+
+  // 实验数据分析相关方法
+  static async getExperimentDataBatches(): Promise<Batch[]> {
+    const response = await api.get('/api/experimentData/batches')
+    return response.data
+  }
+
+  static async getExperimentDataBatchesWithData(): Promise<Batch[]> {
+    const response = await api.get('/api/experimentData/batches-with-data')
+    return response.data
+  }
+
+  static async getExperimentDataPersons(batchId?: number): Promise<Person[]> {
+    const url = batchId ? `/api/experimentData/persons?batch_id=${batchId}` : '/api/experimentData/persons'
+    const response = await api.get(url)
+    return response.data
+  }
+
+  static async getExperimentDataPersonsWithData(batchId?: number): Promise<Person[]> {
+    const url = batchId ? `/api/experimentData/persons-with-data?batch_id=${batchId}` : '/api/experimentData/persons-with-data'
+    const response = await api.get(url)
+    return response.data
+  }
+
+  static async getExperimentData(batchId?: number, personId?: number): Promise<ExperimentDataSummary> {
+    const params = new URLSearchParams()
+    if (batchId) params.append('batch_id', batchId.toString())
+    if (personId) params.append('person_id', personId.toString())
+    const response = await api.get(`/api/experimentData/data?${params.toString()}`)
+    return response.data
+  }
+
+  static async uploadExperimentData(file: File): Promise<UploadResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post('/api/experimentData/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response.data
   }
 

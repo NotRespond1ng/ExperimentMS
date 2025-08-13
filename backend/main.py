@@ -12,7 +12,7 @@ from logging_setup import setup_logger, log_startup_info, log_shutdown_info, get
 
 
 # 导入路由
-from routers import batches, persons, experiments, competitor_files, finger_blood_data, sensors, auth, activities, stats, sensor_details, wear_records
+from routers import batches, persons, experiments, competitor_files, finger_blood_data, sensors, auth, activities, stats, sensor_details, wear_records, experiment_data
 
 # 初始化日志配置
 setup_logger()
@@ -73,6 +73,7 @@ app.include_router(finger_blood_data.router)
 app.include_router(sensors.router)
 app.include_router(sensor_details.router)
 app.include_router(wear_records.router)
+app.include_router(experiment_data.router)
 
 # 根路径
 @app.get("/")

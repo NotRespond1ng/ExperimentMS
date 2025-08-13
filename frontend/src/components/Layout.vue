@@ -63,6 +63,14 @@
           </el-menu-item>
           
           <el-menu-item 
+            v-if="hasPermission('experiment_data_analysis')"
+            index="/experimentDataAnalysis"
+          >
+            <el-icon><DataBoard /></el-icon>
+            <template #title>实验数据分析</template>
+          </el-menu-item>
+          
+          <el-menu-item 
             v-if="hasPermission('sensor_data')"
             index="/sensors"
           >
@@ -72,7 +80,7 @@
           
           <el-menu-item 
             v-if="hasPermission('sensor_details')"
-            index="/sensor-details"
+            index="/sensorDetails"
           >
             <el-icon><CircleCheck /></el-icon>
             <template #title>传感器详细信息</template>
@@ -80,7 +88,7 @@
           
           <el-menu-item 
             v-if="hasPermission('wear_records')"
-            index="/wear-records"
+            index="/wearRecords"
           >
             <el-icon><Calendar /></el-icon>
             <template #title>佩戴记录</template>
@@ -159,6 +167,7 @@ import {
   ArrowDown,
   SwitchButton,
   DataAnalysis,
+  DataBoard,
   Files
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'

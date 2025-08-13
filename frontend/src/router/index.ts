@@ -106,7 +106,7 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
-        path: 'sensor-details',
+        path: 'sensorDetails',
         name: 'SensorDetailManagement',
         component: SensorDetailManagement,
         meta: {
@@ -116,13 +116,23 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
-        path: 'wear-records',
+        path: 'wearRecords',
         name: 'WearRecordManagement',
         component: WearRecordManagement,
         meta: {
           title: '佩戴记录管理',
           icon: 'Connection',
           module: 'wear_records'
+        }
+      },
+      {
+        path: 'experimentDataAnalysis',
+        name: 'ExperimentDataAnalysis',
+        component: () => import('@/pages/ExperimentDataAnalysis.vue'),
+        meta: {
+          title: '实验数据分析',
+          icon: 'BarChart3',
+          module: 'experiment_data_analysis'
         }
       },
       {

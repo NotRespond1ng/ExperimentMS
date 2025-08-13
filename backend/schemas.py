@@ -28,6 +28,7 @@ class ModuleEnum(str, Enum):
     COMPETITOR_DATA = "competitor_data"
     FINGER_BLOOD_DATA = "finger_blood_data"
     SENSOR_DATA = "sensor_data"
+    EXPERIMENT_DATA_ANALYSIS = "experiment_data_analysis"
 
 # 批次相关模式
 class BatchBase(BaseModelWithConfig):
@@ -295,3 +296,30 @@ class ActivityResponse(ActivityBase):
     
     class Config:
         from_attributes = True
+
+# 实验数据分析相关模式
+class DailyExperimentDataBase(BaseModelWithConfig):
+    person_id: int
+    batch_id: int
+    experiment_day: int
+    mard_value: Optional[float] = None
+    pard_value: Optional[float] = None
+    record_date: date
+
+class DailyExperimentDataCreate(DailyExperimentDataBase):
+    pass
+
+class DailyExperimentDataUpdate(DailyExperimentDataBase):
+    pass
+
+class DailyExperimentDataResponse(DailyExperimentDataBase):
+    data_id: int
+
+class ExperimentDataSummary(BaseModel):
+    daily_data: List[DailyExperimentDataResponse]
+    avg_mard: float
+    avg_pard: float
+
+class UploadResponse(BaseModel):
+    message: str
+    processed_rows: int

@@ -7,7 +7,7 @@ from schemas import SensorDetailCreate, SensorDetailUpdate, SensorDetailResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
 
-router = APIRouter(prefix="/api/sensor-details", tags=["传感器详细信息管理"])
+router = APIRouter(prefix="/api/sensorDetails", tags=["传感器详细信息管理"])
 
 @router.get("/", response_model=List[SensorDetailResponse])
 def get_sensor_details(

@@ -8,7 +8,7 @@ from schemas import WearRecordCreate, WearRecordUpdate, WearRecordResponse, Mess
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
 
-router = APIRouter(prefix="/api/wear-records", tags=["佩戴记录管理"])
+router = APIRouter(prefix="/api/wearRecords", tags=["佩戴记录管理"])
 
 @router.get("/used-sensors", response_model=List[int])
 def get_used_sensors(
@@ -22,7 +22,7 @@ def get_used_sensors(
 @router.get("/", response_model=List[WearRecordResponse])
 def get_wear_records(
     skip: int = Query(0, ge=0, description="跳过的记录数"),
-    limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
+    limit: int = Query(1000, ge=1, le=1000, description="返回的记录数"),
     batch_id: Optional[int] = Query(None, description="按批次筛选"),
     person_id: Optional[int] = Query(None, description="按人员筛选"),
     sensor_detail_id: Optional[int] = Query(None, description="按传感器详细信息筛选"),
@@ -30,7 +30,7 @@ def get_wear_records(
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取佩戴记录列表"""
-    query = db.query(WearRecord).join(Batch).join(Person).join(SensorDetail)
+    query = db.query(WearRecord).outerjoin(Batch).outerjoin(Person).outerjoin(SensorDetail)
     
     if batch_id:
         query = query.filter(WearRecord.batch_id == batch_id)
