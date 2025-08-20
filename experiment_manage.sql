@@ -3,15 +3,15 @@
 
  Source Server         : localhost_3306
  Source Server Type    : MySQL
- Source Server Version : 80034
+ Source Server Version : 80032
  Source Host           : localhost:3306
  Source Schema         : experiment_manage
 
  Target Server Type    : MySQL
- Target Server Version : 80034
+ Target Server Version : 80032
  File Encoding         : 65001
 
- Date: 13/08/2025 17:53:20
+ Date: 20/08/2025 09:55:57
 */
 
 SET NAMES utf8mb4;
@@ -31,7 +31,7 @@ CREATE TABLE `activities`  (
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   INDEX `ix_activities_activity_id`(`activity_id` ASC) USING BTREE,
   CONSTRAINT `activities_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of activities
@@ -53,27 +53,28 @@ INSERT INTO `activities` VALUES (10, 'experiment_update', '更新了实验 7', '
 DROP TABLE IF EXISTS `batches`;
 CREATE TABLE `batches`  (
   `batch_id` int NOT NULL AUTO_INCREMENT COMMENT '批次唯一标识符',
-  `batch_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '批次号名，确保唯一性',
+  `batch_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '实验批次号名，确保唯一性',
   `start_time` datetime NOT NULL COMMENT '批次开始时间',
   `end_time` datetime NULL DEFAULT NULL COMMENT '批次结束时间',
   `person_count` int NULL DEFAULT 0 COMMENT '批次人数统计',
   PRIMARY KEY (`batch_id`) USING BTREE,
   UNIQUE INDEX `batch_number`(`batch_number` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批次管理表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批次管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of batches
 -- ----------------------------
-INSERT INTO `batches` VALUES (1, 'B20240701-001', '2024-07-01 09:00:00', '2024-07-16 17:00:00', 28);
-INSERT INTO `batches` VALUES (2, 'B20240701-002', '2024-07-05 10:30:00', '2024-07-20 16:00:00', 1);
-INSERT INTO `batches` VALUES (3, 'B20240701-003', '2024-07-10 14:00:00', NULL, 0);
-INSERT INTO `batches` VALUES (4, '20250717', '2025-07-22 00:00:00', NULL, 0);
-INSERT INTO `batches` VALUES (5, '20250723', '2025-07-23 00:00:00', NULL, 0);
-INSERT INTO `batches` VALUES (6, '001', '2025-07-24 00:00:00', '2025-08-07 00:00:00', 0);
+INSERT INTO `batches` VALUES (1, '0723', '2024-07-01 09:00:00', '2024-07-16 17:00:00', 28);
+INSERT INTO `batches` VALUES (2, '0724', '2024-07-05 10:30:00', '2024-07-20 16:00:00', 1);
+INSERT INTO `batches` VALUES (3, '0729', '2024-07-10 14:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (4, '0731', '2025-07-22 00:00:00', NULL, 1);
+INSERT INTO `batches` VALUES (5, '0806', '2025-07-23 00:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (6, '0813', '2025-07-24 00:00:00', '2025-08-07 00:00:00', 0);
 INSERT INTO `batches` VALUES (7, '002', '2025-07-30 00:00:00', NULL, 0);
 INSERT INTO `batches` VALUES (8, '003', '2025-07-15 00:00:00', '2025-07-26 00:00:00', 3);
-INSERT INTO `batches` VALUES (9, '00001', '2025-08-07 16:08:58', NULL, 1);
-INSERT INTO `batches` VALUES (10, '00000012', '2025-08-07 00:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (9, '00001', '2025-08-07 16:08:58', NULL, 2);
+INSERT INTO `batches` VALUES (10, '测试批次', '2025-08-08 00:00:00', NULL, 1);
+INSERT INTO `batches` VALUES (11, '99809', '2025-08-09 00:00:00', NULL, 0);
 
 -- ----------------------------
 -- Table structure for competitor_files
@@ -91,7 +92,7 @@ CREATE TABLE `competitor_files`  (
   INDEX `idx_upload_time`(`upload_time` ASC) USING BTREE,
   CONSTRAINT `competitor_files_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `competitor_files_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '竞品文件表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '竞品文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of competitor_files
@@ -115,7 +116,7 @@ CREATE TABLE `daily_experiment_data`  (
   INDEX `idx_batch_person`(`batch_id` ASC, `person_id` ASC) USING BTREE,
   CONSTRAINT `daily_experiment_data_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `daily_experiment_data_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '每日体内实验数据记录表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '每日体内实验数据记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of daily_experiment_data
@@ -150,7 +151,7 @@ CREATE TABLE `experiment_members`  (
   INDEX `person_id`(`person_id` ASC) USING BTREE,
   CONSTRAINT `experiment_members_ibfk_1` FOREIGN KEY (`experiment_id`) REFERENCES `experiments` (`experiment_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `experiment_members_ibfk_2` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验成员关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验成员关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of experiment_members
@@ -184,7 +185,7 @@ CREATE TABLE `experiments`  (
   PRIMARY KEY (`experiment_id`) USING BTREE,
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `experiments_ibfk_1` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验管理表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of experiments
@@ -210,7 +211,7 @@ CREATE TABLE `finger_blood_files`  (
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `finger_blood_files_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `finger_blood_files_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '指尖血文件表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '指尖血文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of finger_blood_files
@@ -253,7 +254,7 @@ CREATE TABLE `persons`  (
   PRIMARY KEY (`person_id`) USING BTREE,
   INDEX `fk_persons_batch`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `fk_persons_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员管理表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of persons
@@ -280,6 +281,7 @@ INSERT INTO `persons` VALUES (19, '韩十九', 'Female', 28, 1);
 INSERT INTO `persons` VALUES (20, '杨二十', 'Male', 36, 1);
 INSERT INTO `persons` VALUES (21, '朱二十一', 'Female', 30, 1);
 INSERT INTO `persons` VALUES (22, '秦二十二', 'Male', 34, 1);
+INSERT INTO `persons` VALUES (23, '尤二十三', 'Female', 23, 4);
 INSERT INTO `persons` VALUES (24, '许二十四', 'Male', 40, 2);
 INSERT INTO `persons` VALUES (25, '何二十五', 'Female', 32, 1);
 INSERT INTO `persons` VALUES (26, 'adada', 'Male', NULL, 1);
@@ -290,7 +292,9 @@ INSERT INTO `persons` VALUES (30, '测试人员', 'Male', 25, 1);
 INSERT INTO `persons` VALUES (31, '测试人员', 'Male', 25, 1);
 INSERT INTO `persons` VALUES (32, '测试人员', 'Male', 25, 1);
 INSERT INTO `persons` VALUES (33, '测试人员', 'Male', 25, 1);
+INSERT INTO `persons` VALUES (34, '123123', NULL, NULL, 9);
 INSERT INTO `persons` VALUES (35, '24444', NULL, NULL, 9);
+INSERT INTO `persons` VALUES (36, '小明', 'Female', 34, 10);
 
 -- ----------------------------
 -- Table structure for sensor_details
@@ -318,29 +322,24 @@ CREATE TABLE `sensor_details`  (
 -- ----------------------------
 -- Records of sensor_details
 -- ----------------------------
-INSERT INTO `sensor_details` VALUES (1, '2024-05-17', '阻氧-15', 'E051501', 0.0000, 2.7100, 6.9200, 40.6700, 1.5367160000, 0.9916904170, '去向1', '0619A', '2025-08-08 10:00:01');
-INSERT INTO `sensor_details` VALUES (2, '2024-05-17', '阻氧-18', 'E051503', 0.0000, 2.9200, 7.2700, 35.3400, 1.5015540000, 0.9960834830, '去向2', '0619B', '2025-08-08 10:00:01');
-INSERT INTO `sensor_details` VALUES (3, '2025-08-08', '0001', '09002', 4.0000, 2.0000, 4.0000, 5.0000, 4.0000000000, 1.0000000000, '213124', '', '2025-08-08 10:33:45');
-INSERT INTO `sensor_details` VALUES (4, '2025-08-12', '1', '1', 23.0000, 2.0000, 23.0000, 4.0000, 4.0000000000, 1.0000000000, '2141', '214124', '2025-08-12 11:20:25');
-INSERT INTO `sensor_details` VALUES (41, '2024-07-15', '20240701-39#', 'F070904', 0.0000, 4.2200, 9.9700, 36.6400, 1.8400000000, 0.9952000000, NULL, NULL, '2025-08-12 17:00:22');
-INSERT INTO `sensor_details` VALUES (42, '2024-07-15', '20240624阻氧-250#', 'B070904', 0.0000, 3.7300, 9.1200, 39.6200, 1.6900000000, 0.9984000000, NULL, '0716A', '2025-08-12 17:00:22');
-INSERT INTO `sensor_details` VALUES (43, '2024-07-15', '20240701-6#', 'E070902', 0.0000, 4.4800, 10.6000, 38.8100, 1.9800000000, 0.9949000000, NULL, '崔总佩戴', '2025-08-12 17:00:22');
-INSERT INTO `sensor_details` VALUES (44, '2024-07-15', '20240624阻氧-256#', 'B070905', 0.0000, 3.9400, 9.5100, 38.8900, 1.8700000000, 0.9965000000, NULL, NULL, '2025-08-12 17:00:22');
-INSERT INTO `sensor_details` VALUES (45, '2024-07-15', '20240701-38#', 'F070903', 0.0000, 4.4500, 10.4800, 37.6000, 1.9900000000, 0.9933000000, NULL, '袁总', '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (46, '2024-07-15', '20240624阻氧-227#', 'B070902', 0.0000, 4.4800, 10.8200, 44.2500, 2.1400000000, 0.9962000000, NULL, '备用', '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (47, '2024-07-15', '20240701-15#', 'E070904', 0.0000, 4.4400, 9.9600, 29.6200, 1.7100000000, 0.9854000000, NULL, NULL, '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (48, '2024-07-15', '20240624阻氧-214#', 'B070901', 0.0000, 4.0700, 10.1500, 49.8600, 2.1700000000, 0.9964000000, NULL, '袁总', '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (49, '2024-07-15', '20240624-阻氧-244#', 'A070502', 0.0000, 4.7600, 11.9100, 59.9800, 2.4600000000, 0.9983000000, NULL, '0716A', '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (50, '2024-07-15', '20240624阻氧-265#', 'B070906', 0.0000, 4.3000, 10.6400, 50.0600, 2.2500000000, 0.9972000000, NULL, '袁总', '2025-08-12 17:00:23');
-INSERT INTO `sensor_details` VALUES (51, '2024-10-09', '20240909-86#', 'B092003', 0.0000, 4.6200, 11.6100, 59.8600, 2.4300000000, 0.9980000000, NULL, '1016B', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (52, '2024-10-09', '20240909-83#', 'B092002', 0.0000, 3.8900, 9.7300, 49.1300, 2.0400000000, 0.9966000000, NULL, '1016A', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (53, '2024-10-09', '20240909-49＃', 'D091901', 0.0000, 4.6200, 11.2500, 48.1800, 2.1800000000, 0.9970000000, NULL, '体外', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (54, '2024-10-09', '20240909-37＃', 'C091901', 0.0000, 4.8200, 11.6200, 47.2200, 2.2200000000, 0.9973000000, NULL, '体外', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (55, '2024-10-09', '20240909-15#', 'E091902', 0.0000, 4.8600, 11.8000, 49.6400, 2.2700000000, 0.9972000000, NULL, '1016C', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (56, '2024-10-09', '20240909-33#', 'F091905', 0.0000, 4.8400, 11.8200, 51.2300, 2.3100000000, 0.9975000000, NULL, '备用', '2025-08-12 17:00:25');
-INSERT INTO `sensor_details` VALUES (57, '2024-10-09', '20240909-31#', 'F091903', 0.0000, 4.9300, 12.0600, 52.6100, 2.3000000000, 0.9969000000, NULL, '备用', '2025-08-12 17:00:27');
-INSERT INTO `sensor_details` VALUES (58, '2024-10-09', '20240909-60＃', 'D091906', 0.0000, 4.9400, 12.0400, 51.5200, 2.3200000000, 0.9975000000, '哈哈哈哈', '备用', '2025-08-12 17:00:27');
-INSERT INTO `sensor_details` VALUES (59, '2025-08-13', '12313', '3211', 12.0000, 21.0000, 21.0000, 21.0000, 41.0000000000, 0.5000000000, '', '测试', '2025-08-13 17:10:25');
+INSERT INTO `sensor_details` VALUES (1, '2024-05-17', '7-003-49', 'E051501', 0.0000, 2.7100, 6.9200, 40.6700, 1.5367160000, 0.9916904170, '去向1', '0619A', '2025-08-08 10:00:01');
+INSERT INTO `sensor_details` VALUES (2, '2024-05-17', '7-003-54', 'E051503', 0.0000, 2.9200, 7.2700, 35.3400, 1.5015540000, 0.9960834830, '去向2', '0619B', '2025-08-08 10:00:01');
+INSERT INTO `sensor_details` VALUES (3, '2025-08-08', '7-003-59', '09002', 4.0000, 2.0000, 4.0000, 5.0000, 4.0000000000, 1.0000000000, '213124', '', '2025-08-08 10:33:45');
+INSERT INTO `sensor_details` VALUES (60, '2025-06-27', '5-007-12', 'D061706', 0.0000, 3.6300, 8.5500, 30.8700, 1.5200000000, 0.9940860000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (61, '2025-06-27', '5-007-04', 'C061704', 0.0000, 3.6800, 8.6600, 31.2800, 1.5200000000, 0.9941550000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (62, '2025-06-27', '5-007-02', 'C061702', 0.0000, 3.8100, 8.9500, 32.1600, 1.5700000000, 0.9938300000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (63, '2025-06-27', '5-007-48', 'B061806', 0.0000, 4.0400, 9.5200, 34.3500, 1.7000000000, 0.9939900000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (64, '2025-06-27', '5-007-03', 'C061703', 0.0000, 4.1500, 9.6900, 33.6300, 1.6900000000, 0.9926070000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (65, '2025-06-27', '5-007-47', 'B061805', 0.0000, 4.1100, 9.7200, 35.5500, 1.7200000000, 0.9946990000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (66, '2025-06-27', '5-007-46', 'B061804', 0.0000, 4.1400, 9.7300, 34.8500, 1.7100000000, 0.9938900000, NULL, '已经坏了', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (67, '2025-06-27', '5-006-36', 'I061710', 0.0000, 4.2300, 10.0200, 37.1100, 1.7600000000, 0.9950280000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (68, '2025-06-27', '5-007-01', 'C061701', 0.0000, 4.3000, 10.0600, 35.1500, 1.7600000000, 0.9928450000, NULL, '嘻嘻哈哈', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (69, '2025-06-27', '5-007-38', 'A061802', 0.0000, 4.2500, 10.1400, 38.9800, 1.8300000000, 0.9963410000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (70, '2025-06-27', '5-007-10', 'D061704', 0.0000, 4.2700, 10.1700, 38.4900, 1.8400000000, 0.9957360000, NULL, '不知道了', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (71, '2025-06-27', '5-007-42', 'A061806', 0.0000, 4.3700, 10.2200, 35.8500, 1.8100000000, 0.9925780000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (72, '2025-06-27', '5-007-39', 'A061803', 0.0000, 4.3200, 10.2400, 38.1600, 1.8200000000, 0.9954270000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (73, '2025-06-27', '5-007-09', 'D061703', 0.0000, 4.3100, 10.2600, 38.9800, 1.8700000000, 0.9957770000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (74, '2025-06-27', '5-007-11', 'D061705', 0.0000, 4.3600, 10.3300, 38.4900, 1.8400000000, 0.9954180000, '测试', NULL, '2025-08-19 10:50:01');
 
 -- ----------------------------
 -- Table structure for sensors
@@ -348,27 +347,35 @@ INSERT INTO `sensor_details` VALUES (59, '2025-08-13', '12313', '3211', 12.0000,
 DROP TABLE IF EXISTS `sensors`;
 CREATE TABLE `sensors`  (
   `sensor_id` int NOT NULL AUTO_INCREMENT COMMENT '传感器唯一标识符',
-  `sensor_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '传感器名称',
   `person_id` int NOT NULL COMMENT '关联的人员ID',
   `batch_id` int NOT NULL COMMENT '关联的批次ID',
+  `sensor_detail_id` int NULL DEFAULT NULL COMMENT '关联的传感器详细信息ID (外键)',
+  `sensor_lot_no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器批号',
+  `sensor_batch` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器批次 (与传感器号值相同)',
+  `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器号 (与传感器批次值相同)',
+  `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 发射器号',
   `start_time` datetime NOT NULL COMMENT '传感器开始使用时间',
   `end_time` datetime NULL DEFAULT NULL COMMENT '传感器结束使用时间',
   `end_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器结束使用原因（可选）',
   PRIMARY KEY (`sensor_id`) USING BTREE,
   INDEX `person_id`(`person_id` ASC) USING BTREE,
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
+  INDEX `fk_sensor_detail`(`sensor_detail_id` ASC) USING BTREE,
+  CONSTRAINT `fk_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `sensors_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `sensors_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器管理表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sensors
 -- ----------------------------
-INSERT INTO `sensors` VALUES (1, '血糖传感器-001', 1, 1, '2024-07-01 09:30:00', '2024-07-14 18:00:00', NULL);
-INSERT INTO `sensors` VALUES (2, '心率传感器-A', 2, 1, '2024-07-05 11:00:00', NULL, NULL);
-INSERT INTO `sensors` VALUES (3, '温度传感器-XYZ', 1, 2, '2024-07-10 15:00:00', '2024-07-20 10:00:00', NULL);
-INSERT INTO `sensors` VALUES (4, '123', 1, 2, '2025-07-07 00:00:00', '2025-07-08 00:00:00', NULL);
-INSERT INTO `sensors` VALUES (5, '123', 1, 1, '2025-07-24 00:00:00', '2025-07-26 00:00:00', '自然结束');
+INSERT INTO `sensors` VALUES (6, 1, 1, 1, '1225070901', '7-003-49', '7-003-49', 'CGMS105D3B16', '2025-07-01 09:30:00', '2025-07-14 18:00:00', '14天实验正常结束');
+INSERT INTO `sensors` VALUES (7, 2, 1, 2, '1225070901\r\n', '7-003-54', '7-003-54', 'CGMS1002CDB0', '2025-07-05 11:00:00', NULL, NULL);
+INSERT INTO `sensors` VALUES (8, 27, 8, 3, '1225070901\r\n', '7-003-59', '7-003-59', 'CGMS10DC796C', '2025-07-15 10:00:00', '2025-07-20 10:00:00', '用户提前取下');
+INSERT INTO `sensors` VALUES (9, 1, 1, NULL, '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '2025-08-19 11:04:39', NULL, NULL);
+INSERT INTO `sensors` VALUES (10, 36, 10, NULL, '1225070901', '5-007-11', '5-007-11', 'CGMS10B39D13', '2025-08-19 11:19:53', '2025-08-30 00:00:00', NULL);
+INSERT INTO `sensors` VALUES (11, 36, 10, NULL, '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '2025-08-19 18:17:55', NULL, NULL);
+INSERT INTO `sensors` VALUES (12, 36, 10, NULL, '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '2025-08-20 09:36:28', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for user_permissions
@@ -385,7 +392,7 @@ CREATE TABLE `user_permissions`  (
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   INDEX `ix_user_permissions_permission_id`(`permission_id` ASC) USING BTREE,
   CONSTRAINT `user_permissions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_permissions
@@ -416,7 +423,7 @@ CREATE TABLE `users`  (
   `updateTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`user_id`) USING BTREE,
   UNIQUE INDEX `uq_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users
@@ -425,7 +432,6 @@ INSERT INTO `users` VALUES (1, 'admin', '$2b$12$OrEfSmkameHVVRayq/Y4BORSYxWXbu0P
 INSERT INTO `users` VALUES (2, 'test', '$2b$12$60QG7BG0S3XqhfkqkoeVM.fRylsA8plpnjA7Em2HTJc74ZYHA56Ci', 'User', '2025-07-23 11:14:45', '2025-07-23 11:14:45');
 INSERT INTO `users` VALUES (3, 'test1', '$2b$12$V7gMAszAdAi/hy0n3.Ph5eIWvErYegHNhZqpUNgz1YVEpCEn5vDiS', 'User', '2025-07-23 17:01:22', '2025-07-23 17:01:22');
 INSERT INTO `users` VALUES (4, 'test2', '$2b$12$WFWLtNoMtGGuuleu5bU0pOFVIr3WuINmDakZqOf4KeW82nVVFR5/i', 'User', '2025-07-24 11:30:49', '2025-07-24 11:30:49');
-INSERT INTO `users` VALUES (5, 'testuser2', '$2b$12$V2lzIQ6g6auSvXzaUpCi5OVURDglOXoxIdBynKklKlnW2QvULcCFS', 'User', '2025-08-07 15:23:32', '2025-08-07 15:23:32');
 
 -- ----------------------------
 -- Table structure for wear_records
@@ -435,33 +441,36 @@ CREATE TABLE `wear_records`  (
   `wear_record_id` int NOT NULL AUTO_INCREMENT COMMENT '佩戴记录唯一标识符 (主键)',
   `batch_id` int NOT NULL COMMENT '关联的批次ID (外键)',
   `person_id` int NOT NULL COMMENT '关联的人员ID (外键)',
-  `sensor_detail_id` int NOT NULL COMMENT '关联的传感器ID (外键)',
+  `sensor_id` int NOT NULL COMMENT '关联的传感器ID (外键)',
   `applicator_lot_no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '敷贴器批号',
   `sensor_lot_no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器批号',
   `sensor_batch` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器批次',
   `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器号',
   `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发射器号',
   `wear_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '佩戴记录创建时间',
+  `wear_position` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `abnormal_situation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '新增: 记录发生的异常情况',
+  `cause_analysis` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '新增: 对异常情况的原因分析',
   PRIMARY KEY (`wear_record_id`) USING BTREE,
-  UNIQUE INDEX `uk_person_sensor`(`person_id` ASC, `sensor_detail_id` ASC) USING BTREE,
+  UNIQUE INDEX `uk_person_sensor`(`person_id` ASC, `sensor_id` ASC) USING BTREE,
   INDEX `fk_wear_batch`(`batch_id` ASC) USING BTREE,
   INDEX `fk_wear_person`(`person_id` ASC) USING BTREE,
-  INDEX `fk_wear_sensor_detail`(`sensor_detail_id` ASC) USING BTREE,
+  INDEX `fk_wear_sensor`(`sensor_id` ASC) USING BTREE,
   CONSTRAINT `fk_wear_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_person` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_wear_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
+  CONSTRAINT `fk_wear_sensor` FOREIGN KEY (`sensor_id`) REFERENCES `sensors` (`sensor_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of wear_records
 -- ----------------------------
-INSERT INTO `wear_records` VALUES (14, 1, 1, 1, '1', '2', '3', '4', '5', '2025-08-08 15:33:54');
-INSERT INTO `wear_records` VALUES (15, 1, 1, 3, '141', '124', '124', '214', '412', '2025-08-08 15:33:54');
-INSERT INTO `wear_records` VALUES (16, 1, 1, 2, '421', '412', '41', '421', '42', '2025-08-08 15:33:54');
-INSERT INTO `wear_records` VALUES (17, 1, 1, 4, 'e12', '312', '321', '31', '231', '2025-08-12 03:22:30');
-INSERT INTO `wear_records` VALUES (18, 1, 2, 59, '1', '2', '3', '4', '5', '2025-08-13 17:10:36');
-INSERT INTO `wear_records` VALUES (19, 1, 2, 58, '5', '6', '62', '362', '623', '2025-08-13 17:10:36');
-INSERT INTO `wear_records` VALUES (20, 2, 24, 41, '1', '2', '3', '4', '5', '2025-08-13 17:19:15');
+INSERT INTO `wear_records` VALUES (22, 1, 2, 8, '1225061701', '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '2025-08-15 09:15:00', 'RIGHT_ONE', '佩戴第三天数据出现频繁中断', '经检查，因用户出汗过多导致敷贴边缘翘起，传感器与皮肤接触不良');
+INSERT INTO `wear_records` VALUES (25, 9, 36, 7, '1225061701', '1225070901', '7-003-54', '7-003-54', 'CGMS1002CDB0', '2025-08-15 16:25:29', 'LEFT_ONE', '', '');
+INSERT INTO `wear_records` VALUES (26, 1, 3, 6, '1225061701', '1225070901', '7-003-49', '7-003-49', 'CGMS105D3B16', '2025-08-18 09:00:00', 'LEFT_ONE', NULL, NULL);
+INSERT INTO `wear_records` VALUES (33, 10, 36, 10, '657457', '1225070901', '5-007-11', '5-007-11', 'CGMS10B39D13', '2025-08-19 14:07:39', 'RIGHT_ONE', NULL, NULL);
+INSERT INTO `wear_records` VALUES (35, 1, 1, 8, '6656', '1225070901\r\n', '7-003-59', '7-003-59', 'CGMS10DC796C', '2025-08-19 16:53:10', 'LEFT_ONE', NULL, NULL);
+INSERT INTO `wear_records` VALUES (36, 10, 36, 11, '888', '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '2025-08-19 18:28:11', 'LEFT_TWO', NULL, NULL);
+INSERT INTO `wear_records` VALUES (37, 10, 36, 12, '1225061701', '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '2025-08-20 09:38:53', 'RIGHT_TWO', NULL, NULL);
 
 -- ----------------------------
 -- Triggers structure for table persons

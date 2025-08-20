@@ -10,7 +10,7 @@
       <div class="toolbar-left">
         <el-input
           v-model="searchText"
-          placeholder="搜索批次号"
+          placeholder="搜索实验批次号"
           style="width: 300px"
           clearable
           @input="handleSearch"
@@ -49,7 +49,7 @@
         v-loading="loading"
       >
         <el-table-column prop="batch_id" label="批次ID" width="100" />
-        <el-table-column prop="batch_number" label="批次号" min-width="150">
+        <el-table-column prop="batch_number" label="实验批次号" min-width="150">
           <template #default="{ row }">
             <el-tag type="primary" size="small">
               {{ row.batch_number }}
@@ -125,10 +125,10 @@
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="批次号" prop="batch_number">
+        <el-form-item label="实验批次号" prop="batch_number">
           <el-input
             v-model="form.batch_number"
-            placeholder="请输入批次号"
+            placeholder="请输入实验批次号"
           />
         </el-form-item>
         
@@ -307,8 +307,8 @@ const form = reactive({
 
 const rules = {
   batch_number: [
-    { required: true, message: '请输入批次号', trigger: 'blur' },
-    { min: 3, max: 50, message: '批次号长度在 3 到 50 个字符', trigger: 'blur' }
+    { required: true, message: '请输入实验批次号', trigger: 'blur' },
+    { min: 3, max: 50, message: '实验批次号长度在 3 到 50 个字符', trigger: 'blur' }
   ],
   start_time: [
     { required: true, message: '请选择开始时间', trigger: 'change' }
@@ -392,7 +392,7 @@ const handleExport = () => {
   try {
     const exportData = filteredBatches.value.map(batch => ({
       '批次ID': batch.batch_id,
-      '批次号': batch.batch_number,
+      '实验批次号': batch.batch_number,
       '开始时间': batch.start_time,
       '结束时间': batch.end_time || '进行中',
       '状态': getBatchStatus(batch).label

@@ -86,7 +86,10 @@ export interface FingerBloodData {
 
 export interface Sensor {
   sensor_id: number
-  sensor_name: string
+  sensor_lot_no?: string
+  sensor_batch?: string
+  sensor_number?: string
+  transmitter_id?: string
   person_id: number
   batch_id: number
   start_time: string
@@ -116,12 +119,15 @@ export interface WearRecord {
   wear_record_id: number
   batch_id: number
   person_id: number
-  sensor_detail_id: number
+  sensor_id: number           // 关联sensors表的sensor_id
   applicator_lot_no?: string  // 敷贴器批号
   sensor_lot_no?: string      // 传感器批号
   sensor_batch?: string       // 传感器批次
   sensor_number?: string      // 传感器号
   transmitter_id?: string     // 发射器号
+  wear_position?: string      // 佩戴位置
+  abnormal_situation?: string // 异常情况
+  cause_analysis?: string     // 原因分析
   wear_time?: string
   batch_number?: string
   person_name?: string
@@ -484,6 +490,32 @@ export const userApi = {
   deleteUser: (userId: number) => ApiService.deleteUser(userId),
   getUserPermissions: (userId: number) => ApiService.getUserPermissions(userId),
   assignPermissions: (data: any) => ApiService.assignPermissions(data)
+}
+
+// 为了向后兼容，导出personApi对象
+export const personApi = {
+  getPersons: () => ApiService.getPersons(),
+  createPerson: (person: Omit<Person, 'person_id'>) => ApiService.createPerson(person),
+  updatePerson: (id: number, person: Partial<Person>) => ApiService.updatePerson(id, person),
+  deletePerson: (id: number) => ApiService.deletePerson(id),
+  getBatchesForPerson: () => ApiService.getBatchesForPerson()
+}
+
+// 为了向后兼容，导出wearRecordApi对象
+export const wearRecordApi = {
+  getWearRecords: () => ApiService.getWearRecords(),
+  createWearRecord: (wearRecord: Omit<WearRecord, 'wear_record_id' | 'wear_time' | 'batch_number' | 'person_name' | 'sensor_detail'>) => ApiService.createWearRecord(wearRecord),
+  updateWearRecord: (id: number, wearRecord: Partial<WearRecord>) => ApiService.updateWearRecord(id, wearRecord),
+  deleteWearRecord: (id: number) => ApiService.deleteWearRecord(id),
+  getUsedSensors: () => ApiService.getUsedSensors()
+}
+
+// 为了向后兼容，导出sensorApi对象
+export const sensorApi = {
+  getSensors: () => ApiService.getSensors(),
+  createSensor: (sensor: Omit<Sensor, 'sensor_id'>) => ApiService.createSensor(sensor),
+  updateSensor: (id: number, sensor: Partial<Sensor>) => ApiService.updateSensor(id, sensor),
+  deleteSensor: (id: number) => ApiService.deleteSensor(id)
 }
 
 export default api

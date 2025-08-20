@@ -10,7 +10,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="selectedBatchId"
-          placeholder="筛选批次"
+          placeholder="筛选实验批次"
           clearable
           style="width: 150px; margin-right: 12px"
           @change="onBatchChange"

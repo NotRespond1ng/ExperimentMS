@@ -79,7 +79,7 @@
             {{ row.age || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="batch_number" label="所属批次" min-width="120">
+        <el-table-column prop="batch_number" label="所属实验批次" min-width="120">
           <template #default="{ row }">
             <el-tag v-if="row.batch_number" type="info" size="small">
               {{ row.batch_number }}
@@ -161,10 +161,10 @@
           />
         </el-form-item>
         
-        <el-form-item label="所属批次" prop="batch_id">
+        <el-form-item label="所属实验批次" prop="batch_id">
           <el-select
             v-model="form.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
             clearable
           >
@@ -199,10 +199,10 @@
         label-width="100px"
         label-position="left"
       >
-        <el-form-item label="选择批次" prop="batch_id">
+        <el-form-item label="选择实验批次" prop="batch_id">
           <el-select
             v-model="batchForm.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
             clearable
           >
@@ -412,7 +412,7 @@ const rules = {
 
 const batchRules = {
   batch_id: [
-    { required: true, message: '请选择批次', trigger: 'change' }
+    { required: true, message: '请选择实验批次', trigger: 'change' }
   ]
 }
 
@@ -464,7 +464,7 @@ const handleExport = () => {
       '姓名': person.person_name,
       '性别': genderMap[person.gender] || '未知',
       '年龄': person.age || '-',
-      '所属批次': person.batch_number || '未分配'
+      '所属实验批次': person.batch_number || '未分配'
     }))
     
     exportToExcel(exportData, '人员数据')

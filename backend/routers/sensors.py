@@ -34,9 +34,12 @@ def get_sensors(
     for sensor in sensors:
         sensor_dict = {
             "sensor_id": sensor.sensor_id,
-            "sensor_name": sensor.sensor_name,
             "person_id": sensor.person_id,
             "batch_id": sensor.batch_id,
+            "sensor_lot_no": sensor.sensor_lot_no,
+            "sensor_batch": sensor.sensor_batch,
+            "sensor_number": sensor.sensor_number,
+            "transmitter_id": sensor.transmitter_id,
             "start_time": sensor.start_time,
             "end_time": sensor.end_time,
             "end_reason": sensor.end_reason,
@@ -70,9 +73,12 @@ def create_sensor(
     
     result = SensorResponse(
         sensor_id=db_sensor.sensor_id,
-        sensor_name=db_sensor.sensor_name,
         person_id=db_sensor.person_id,
         batch_id=db_sensor.batch_id,
+        sensor_lot_no=db_sensor.sensor_lot_no,
+        sensor_batch=db_sensor.sensor_batch,
+        sensor_number=db_sensor.sensor_number,
+        transmitter_id=db_sensor.transmitter_id,
         start_time=db_sensor.start_time,
         end_time=db_sensor.end_time,
         end_reason=db_sensor.end_reason,
@@ -95,9 +101,12 @@ def get_sensor(
     
     result = SensorResponse(
         sensor_id=sensor.sensor_id,
-        sensor_name=sensor.sensor_name,
         person_id=sensor.person_id,
         batch_id=sensor.batch_id,
+        sensor_lot_no=sensor.sensor_lot_no,
+        sensor_batch=sensor.sensor_batch,
+        sensor_number=sensor.sensor_number,
+        transmitter_id=sensor.transmitter_id,
         start_time=sensor.start_time,
         end_time=sensor.end_time,
         end_reason=sensor.end_reason,
@@ -136,9 +145,12 @@ def update_sensor(
     
     result = SensorResponse(
         sensor_id=db_sensor.sensor_id,
-        sensor_name=db_sensor.sensor_name,
         person_id=db_sensor.person_id,
         batch_id=db_sensor.batch_id,
+        sensor_lot_no=db_sensor.sensor_lot_no,
+        sensor_batch=db_sensor.sensor_batch,
+        sensor_number=db_sensor.sensor_number,
+        transmitter_id=db_sensor.transmitter_id,
         start_time=db_sensor.start_time,
         end_time=db_sensor.end_time,
         end_reason=db_sensor.end_reason,

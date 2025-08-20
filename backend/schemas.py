@@ -141,9 +141,12 @@ class FingerBloodDataResponse(FingerBloodDataBase):
 
 # 传感器相关模式
 class SensorBase(BaseModelWithConfig):
-    sensor_name: str
     person_id: int
     batch_id: int
+    sensor_lot_no: Optional[str] = None
+    sensor_batch: Optional[str] = None
+    sensor_number: Optional[str] = None
+    transmitter_id: Optional[str] = None
     start_time: datetime
     end_time: Optional[datetime] = None
     end_reason: Optional[str] = None
@@ -187,12 +190,15 @@ class SensorDetailResponse(SensorDetailBase):
 class WearRecordBase(BaseModelWithConfig):
     batch_id: int
     person_id: int
-    sensor_detail_id: int
+    sensor_id: int
     applicator_lot_no: Optional[str] = None
     sensor_lot_no: Optional[str] = None
     sensor_batch: Optional[str] = None
     sensor_number: Optional[str] = None
     transmitter_id: Optional[str] = None
+    wear_position: Optional[str] = None
+    abnormal_situation: Optional[str] = None
+    cause_analysis: Optional[str] = None
 
 class WearRecordCreate(WearRecordBase):
     wear_time: Optional[datetime] = None

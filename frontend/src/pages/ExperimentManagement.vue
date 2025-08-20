@@ -10,7 +10,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="filterBatchId"
-          placeholder="筛选批次"
+          placeholder="筛选实验批次"
           clearable
           style="width: 200px; margin-right: 12px"
           @change="handleFilter"
@@ -67,7 +67,7 @@
         v-loading="loading"
       >
         <el-table-column prop="experiment_id" label="实验ID" width="100" />
-        <el-table-column label="批次号" width="150">
+        <el-table-column label="实验批次号" width="150">
           <template #default="{ row }">
             <el-tag type="primary">
               {{ getBatchNumber(row.batch_id) }}
@@ -173,10 +173,10 @@
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="关联批次" prop="batch_id">
+        <el-form-item label="关联实验批次" prop="batch_id" label-width="120px">
           <el-select
             v-model="form.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
           >
             <el-option
@@ -205,7 +205,7 @@
             />
           </el-select>
           <div class="form-tip">
-            {{ form.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+            {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
           </div>
         </el-form-item>
         
@@ -344,7 +344,7 @@ const form = reactive({
 
 const rules = {
   batch_id: [
-    { required: true, message: '请选择关联批次', trigger: 'change' }
+    { required: true, message: '请选择关联实验批次', trigger: 'change' }
   ],
   member_ids: [
     { required: true, message: '请至少选择一个实验成员', trigger: 'change' },
@@ -416,7 +416,7 @@ const handleExport = () => {
     // 准备导出数据
     const exportData = filteredExperiments.value.map(experiment => ({
       '实验ID': experiment.experiment_id,
-      '批次号': getBatchNumber(experiment.batch_id),
+      '实验批次号': getBatchNumber(experiment.batch_id),
       '实验成员': experiment.members?.map(m => m.person_name).join(', ') || '暂无成员',
       '成员数量': experiment.members?.length || 0,
       '实验内容': experiment.experiment_content || '暂无描述',

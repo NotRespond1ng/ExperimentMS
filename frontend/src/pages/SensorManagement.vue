@@ -10,19 +10,19 @@
       <div class="toolbar-left">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索传感器名称"
+          placeholder="搜索传感器号/批号/发射器号"
           style="width: 250px; margin-right: 12px"
           clearable
           @input="handleSearch"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
-          </template>
+          </template> 
         </el-input>
         
         <el-select
           v-model="filterBatch"
-          placeholder="筛选批次"
+          placeholder="筛选实验批次"
           clearable
           style="width: 150px; margin-right: 12px"
           @change="handleFilter"
@@ -149,7 +149,21 @@
         v-loading="loading"
       >
         <el-table-column prop="sensor_id" label="传感器ID" width="100" />
-        <el-table-column prop="sensor_name" label="传感器名称" width="200" />
+        <el-table-column prop="sensor_lot_no" label="传感器批号" width="140">
+          <template #default="{ row }">
+            <span>{{ row.sensor_lot_no || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sensor_batch" label="传感器批次" width="140">
+          <template #default="{ row }">
+            <span>{{ row.sensor_batch || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="发射器号" width="120">
+          <template #default="{ row }">
+            <span class="transmitter-id">{{ row.transmitter_id || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="关联人员" width="150">
           <template #default="{ row }">
           <el-tag type="success">
@@ -157,7 +171,7 @@
           </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="关联批次" width="150">
+        <el-table-column label="关联实验批次" width="150">
           <template #default="{ row }">
            <el-tag type="primary">
             {{ getBatchNumber(row.batch_id) }}
@@ -236,13 +250,57 @@
       >
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="传感器名称" prop="sensor_name">
+            <el-form-item label="传感器批号" prop="sensor_lot_no">
               <el-input
-                v-model="form.sensor_name"
-                placeholder="请输入传感器名称"
+                v-model="form.sensor_lot_no"
+                placeholder="请输入传感器批号"
               />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="传感器批次/号" prop="sensor_batch">
+              <el-select
+                v-model="form.sensor_batch"
+                placeholder="请选择传感器批次/号"
+                filterable
+                style="width: 100%"
+                @change="handleSensorBatchChange"
+              >
+                <el-option
+                  v-for="detail in sensorDetails"
+                  :key="detail.test_number"
+                  :label="detail.test_number"
+                  :value="detail.test_number"
+                />
+              </el-select>
+              <div class="form-tip">
+                从传感器详细信息中选择测试编号
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="传感器号" prop="sensor_number">
+              <el-input
+                v-model="form.sensor_number"
+                placeholder="传感器号将自动与批次保持一致"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="发射器号" prop="transmitter_id">
+              <el-input
+                v-model="form.transmitter_id"
+                placeholder="请输入发射器号"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="关联人员" prop="person_id">
               <el-select
@@ -260,18 +318,15 @@
                 />
               </el-select>
               <div class="form-tip" v-if="!isEdit">
-                {{ form.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+                {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
               </div>
             </el-form-item>
           </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="关联批次" prop="batch_id">
+            <el-form-item label="关联实验批次" prop="batch_id">
               <el-select
                 v-model="form.batch_id"
-                placeholder="请选择批次"
+                placeholder="请选择实验批次"
                 style="width: 100%"
                 filterable
                 :disabled="isEdit"
@@ -285,6 +340,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="开始时间" prop="start_time">
               <el-date-picker
@@ -297,9 +355,6 @@
               />
             </el-form-item>
           </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="结束时间">
               <el-date-picker
@@ -312,7 +367,10 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="结束原因">
               <el-input
                 v-model="form.end_reason"
@@ -349,10 +407,10 @@
       >
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="选择批次" prop="batch_id">
+            <el-form-item label="选择实验批次" prop="batch_id">
               <el-select
                 v-model="batchForm.batch_id"
-                placeholder="请选择批次"
+                placeholder="请选择实验批次"
                 style="width: 100%"
                 clearable
               >
@@ -421,13 +479,12 @@
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item
-                      :prop="`sensorList.${index}.sensor_name`"
-                      :rules="sensorRules.sensor_name"
-                      label="传感器名称"
+                      :prop="`sensorList.${index}.sensor_lot_no`"
+                      label="传感器批号"
                     >
                       <el-input
-                        v-model="sensor.sensor_name"
-                        placeholder="请输入传感器名称"
+                        v-model="sensor.sensor_lot_no"
+                        placeholder="请输入传感器批号"
                       />
                     </el-form-item>
                   </el-col>
@@ -444,6 +501,44 @@
                         style="width: 100%"
                         format="YYYY-MM-DD HH:mm:ss"
                         value-format="YYYY-MM-DD HH:mm:ss"
+                      />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item
+                      :prop="`sensorList.${index}.sensor_batch`"
+                      label="传感器批次/号"
+                    >
+                      <el-select
+                        v-model="sensor.sensor_batch"
+                        placeholder="请选择传感器批次/号"
+                        filterable
+                        style="width: 100%"
+                        @change="(value) => handleBatchSensorChange(index, value)"
+                      >
+                        <el-option
+                          v-for="detail in sensorDetails"
+                          :key="detail.test_number"
+                          :label="detail.test_number"
+                          :value="detail.test_number"
+                        />
+                      </el-select>
+                      <div class="form-tip">
+                        从传感器详细信息中选择测试编号
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item
+                      :prop="`sensorList.${index}.sensor_number`"
+                      label="传感器号"
+                    >
+                      <el-input
+                        v-model="sensor.sensor_number"
+                        placeholder="传感器号将自动与批次保持一致"
+                        disabled
                       />
                     </el-form-item>
                   </el-col>
@@ -498,23 +593,22 @@ import {
   CircleCheck,
   CircleClose,
   Clock,
-  Delete,
-  InfoFilled
+  Delete
 } from '@element-plus/icons-vue'
 import { useDataStore, type Sensor, type Person, type Batch } from '../stores/data'
-import { ApiService } from '../services/api'
+import { ApiService, type SensorDetail } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { usePagination } from '@/composables/usePagination'
-
 import { formatDateTime } from '@/utils/formatters'
 import { exportToExcel } from '@/utils/excel'
 
 const dataStore = useDataStore()
 const authStore = useAuthStore()
 
-// 人员和批次数据
+// 人员、批次和传感器详细信息数据
 const persons = ref<Person[]>([])
 const batches = ref<Batch[]>([])
+const sensorDetails = ref<SensorDetail[]>([])
 
 // 本地格式化函数
 const getPersonName = (personId: number): string => {
@@ -542,19 +636,17 @@ const availablePersonsForFilter = computed(() => {
 // 页面可见性监听
 const handleVisibilityChange = async () => {
   if (!document.hidden) {
-    // 页面变为可见时，刷新数据
     try {
       loading.value = true
-      
-      // 使用缓存机制加载数据
-      const [sensorsData, personsData, batchesData] = await Promise.all([
+      const [sensorsData, personsData, batchesData, sensorDetailsData] = await Promise.all([
         dataStore.loadSensors(),
         dataStore.loadPersons(),
-        dataStore.loadBatches()
+        dataStore.loadBatches(),
+        loadSensorDetails()
       ])
-      
       persons.value = personsData
       batches.value = batchesData
+      sensorDetails.value = sensorDetailsData
     } catch (error) {
       console.error('Failed to load data:', error)
       ElMessage.error('加载数据失败')
@@ -564,28 +656,38 @@ const handleVisibilityChange = async () => {
   }
 }
 
+// 加载传感器详细信息
+const loadSensorDetails = async () => {
+  try {
+    const data = await ApiService.getSensorDetails()
+    sensorDetails.value = data
+    return data
+  } catch (error) {
+    console.error('Failed to load sensor details:', error)
+    ElMessage.error('加载传感器详细信息失败')
+    return []
+  }
+}
+
 // 组件挂载时获取最新数据
 onMounted(async () => {
   try {
     loading.value = true
-    
-    // 使用缓存机制加载数据
-    const [sensorsData, personsData, batchesData] = await Promise.all([
+    const [sensorsData, personsData, batchesData, sensorDetailsData] = await Promise.all([
       dataStore.loadSensors(),
       dataStore.loadPersons(),
-      dataStore.loadBatches()
+      dataStore.loadBatches(),
+      loadSensorDetails()
     ])
-    
     persons.value = personsData
     batches.value = batchesData
+    sensorDetails.value = sensorDetailsData
   } catch (error) {
     console.error('Failed to load data:', error)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
-  
-  // 添加页面可见性监听
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
@@ -599,22 +701,21 @@ const searchKeyword = ref('')
 const filterBatch = ref('')
 const filterPerson = ref('')
 const filterStatus = ref('')
-// 对话框状态
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
-
-// 批量录入对话框状态
 const batchDialogVisible = ref(false)
 const batchFormRef = ref<FormInstance>()
-const currentSensor = ref<Sensor | null>(null)
 
 // 分页相关
 const { currentPage, pageSize, pageSizes, handleSizeChange, handleCurrentChange, resetPagination } = usePagination()
 
 const form = reactive({
   sensor_id: 0,
-  sensor_name: '',
+  sensor_lot_no: '',
+  sensor_batch: '',
+  sensor_number: '',
+  transmitter_id: '',
   person_id: null,
   batch_id: null,
   start_time: '',
@@ -628,13 +729,19 @@ const batchForm = reactive({
   person_id: null as number | null,
   sensorList: [
     {
-      sensor_name: '',
+      sensor_lot_no: '',
+      sensor_batch: '',
+      sensor_number: '',
+      transmitter_id: '',
       start_time: '',
       end_time: '',
       end_reason: ''
     }
   ] as Array<{
-    sensor_name: string
+    sensor_lot_no: string
+    sensor_batch: string
+    sensor_number: string
+    transmitter_id: string
     start_time: string
     end_time: string
     end_reason: string
@@ -643,16 +750,11 @@ const batchForm = reactive({
 
 const rules = computed(() => {
   const baseRules = {
-    sensor_name: [
-      { required: true, message: '请输入传感器名称', trigger: 'blur' }
-    ],
     start_time: [
       { required: true, message: '请选择开始时间', trigger: 'change' }
     ]
-    // end_time 改为选填项，移除验证规则
   }
   
-  // 新建模式下需要验证批次和人员
   if (!isEdit.value) {
     return {
       ...baseRules,
@@ -660,7 +762,7 @@ const rules = computed(() => {
         { required: true, message: '请选择关联人员', trigger: 'change' }
       ],
       batch_id: [
-        { required: true, message: '请选择关联批次', trigger: 'change' }
+        { required: true, message: '请选择关联实验批次', trigger: 'change' }
       ]
     }
   }
@@ -671,7 +773,7 @@ const rules = computed(() => {
 // 批量录入表单验证规则
 const batchRules = {
   batch_id: [
-    { required: true, message: '请选择批次', trigger: 'change' }
+    { required: true, message: '请选择实验批次', trigger: 'change' }
   ],
   person_id: [
     { required: true, message: '请选择人员', trigger: 'change' }
@@ -680,10 +782,6 @@ const batchRules = {
 
 // 传感器数据验证规则
 const sensorRules = {
-  sensor_name: [
-    { required: true, message: '请输入传感器名称', trigger: 'blur' },
-    { min: 1, max: 100, message: '传感器名称长度在 1 到 100 个字符', trigger: 'blur' }
-  ],
   start_time: [
     { required: true, message: '请选择开始时间', trigger: 'change' }
   ]
@@ -692,11 +790,9 @@ const sensorRules = {
 // 根据选择的批次过滤人员（传感器表单）
 const filteredPersonsForSensor = computed(() => {
   if (isEdit.value) {
-    // 如果当前选中的人员存在，确保它在列表中
     if (form.person_id) {
       const currentPerson = persons.value.find(p => p.person_id === form.person_id)
       if (currentPerson) {
-        // 确保当前人员在列表的第一位，方便识别
         const otherPersons = persons.value.filter(p => p.person_id !== form.person_id)
         return [currentPerson, ...otherPersons]
       }
@@ -717,6 +813,26 @@ const filteredPersonsForBatchForm = computed(() => {
   return persons.value.filter(person => person.batch_id === batchForm.batch_id)
 })
 
+// 根据选择的批次过滤人员（过滤区域）
+const filteredPersonsForFilter = computed(() => {
+  if (!filterBatch.value) {
+    return availablePersonsForFilter.value
+  }
+  return availablePersonsForFilter.value.filter(person => person.batch_id.toString() === filterBatch.value)
+})
+
+// 处理传感器批次变更，同步更新传感器号
+const handleSensorBatchChange = (value: string) => {
+  // 传感器号与传感器批次保持一致
+  form.sensor_number = value
+}
+
+// 处理批量表单中传感器批次变更
+const handleBatchSensorChange = (index: number, value: string) => {
+  // 传感器号与传感器批次保持一致
+  batchForm.sensorList[index].sensor_number = value
+}
+
 // 监听批次选择变化，清空人员选择（传感器表单）
 watch(() => form.batch_id, (newBatchId, oldBatchId) => {
   if (newBatchId !== oldBatchId && !isEdit.value) {
@@ -728,6 +844,18 @@ watch(() => form.batch_id, (newBatchId, oldBatchId) => {
 watch(() => batchForm.batch_id, (newBatchId, oldBatchId) => {
   if (newBatchId !== oldBatchId) {
     batchForm.person_id = null
+  }
+})
+
+// 监听过滤批次选择变化，清空人员过滤
+watch(() => filterBatch.value, (newBatchId, oldBatchId) => {
+  if (newBatchId !== oldBatchId && newBatchId) {
+    if (filterPerson.value) {
+      const selectedPerson = availablePersonsForFilter.value.find(p => p.person_id.toString() === filterPerson.value)
+      if (!selectedPerson || selectedPerson.batch_id.toString() !== newBatchId) {
+        filterPerson.value = ''
+      }
+    }
   }
 })
 
@@ -746,8 +874,6 @@ const getSensorStatus = (sensor: Sensor) => {
   }
 }
 
-
-
 // 过滤后的传感器列表
 const filteredSensors = computed(() => {
   let result = dataStore.sensors
@@ -755,7 +881,10 @@ const filteredSensors = computed(() => {
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
     result = result.filter(sensor => 
-      sensor.sensor_name.toLowerCase().includes(keyword)
+      (sensor.sensor_number && sensor.sensor_number.toLowerCase().includes(keyword)) ||
+      (sensor.sensor_lot_no && sensor.sensor_lot_no.toLowerCase().includes(keyword)) ||
+      (sensor.transmitter_id && sensor.transmitter_id.toLowerCase().includes(keyword)) ||
+      (sensor.sensor_batch && sensor.sensor_batch.toLowerCase().includes(keyword))
     )
   }
   
@@ -788,7 +917,6 @@ const filteredSensors = computed(() => {
     }
   }
   
-  // 按传感器ID倒序排列，最新创建的在前面
   return result.sort((a, b) => b.sensor_id - a.sensor_id)
 })
 
@@ -827,41 +955,35 @@ const finishedSensors = computed(() => {
   }).length
 })
 
-
-
-
-
 // 搜索处理
 const handleSearch = () => {
-  // 搜索逻辑已在computed中处理
   resetPagination()
 }
 
 // 筛选处理
 const handleFilter = () => {
-  // 筛选逻辑已在computed中处理
   resetPagination()
 }
 
 // 导出数据
 const handleExport = () => {
   try {
-    // 准备导出数据
     const exportData = filteredSensors.value.map(sensor => ({
       '传感器ID': sensor.sensor_id,
-      '传感器名称': sensor.sensor_name,
+      '传感器批号': sensor.sensor_lot_no || '-',
+      '传感器批次': sensor.sensor_batch || '-',
+      '传感器号': sensor.sensor_number || '-',
+      '发射器号': sensor.transmitter_id || '-',
       '关联人员': getPersonName(sensor.person_id),
-      '关联批次': getBatchNumber(sensor.batch_id),
+      '关联实验批次': getBatchNumber(sensor.batch_id),
       '开始时间': formatDateTime(sensor.start_time),
       '结束时间': formatDateTime(sensor.end_time),
       '结束原因': sensor.end_reason || '-',
       '状态': getSensorStatus(sensor).label
     }))
     
-    // 生成文件名
     let filename = '传感器数据'
     
-    // 如果有筛选条件，添加到文件名中
     if (filterBatch.value || filterPerson.value) {
       const filters = []
       if (filterBatch.value) {
@@ -875,12 +997,14 @@ const handleExport = () => {
       filename = `传感器数据_${filters.join('_')}`
     }
     
-    // 导出文件
     exportToExcel(exportData, filename, {
       '传感器ID': 12,
-      '传感器名称': 20,
+      '传感器批号': 15,
+      '传感器批次': 15,
+      '传感器号': 15,
+      '发射器号': 15,
       '关联人员': 20,
-      '关联批次': 15,
+      '关联实验批次': 15,
       '开始时间': 20,
       '结束时间': 20,
       '结束原因': 25,
@@ -910,7 +1034,10 @@ const handleBatchAdd = () => {
 // 添加传感器项
 const addSensorItem = () => {
   batchForm.sensorList.push({
-    sensor_name: '',
+    sensor_lot_no: '',
+    sensor_batch: '',
+    sensor_number: '',
+    transmitter_id: '',
     start_time: '',
     end_time: '',
     end_reason: ''
@@ -934,7 +1061,10 @@ const resetBatchForm = () => {
     person_id: null,
     sensorList: [
       {
-        sensor_name: '',
+        sensor_lot_no: '',
+        sensor_batch: '',
+        sensor_number: '',
+        transmitter_id: '',
         start_time: '',
         end_time: '',
         end_reason: ''
@@ -947,10 +1077,12 @@ const resetBatchForm = () => {
 const handleEdit = (row: Sensor) => {
   isEdit.value = true
   dialogVisible.value = true
-  // 确保数据完整复制，包括所有字段
   Object.assign(form, {
     sensor_id: row.sensor_id,
-    sensor_name: row.sensor_name,
+    sensor_lot_no: row.sensor_lot_no || '',
+    sensor_batch: row.sensor_batch || '',
+    sensor_number: row.sensor_number || '',
+    transmitter_id: row.transmitter_id || '',
     person_id: row.person_id,
     batch_id: row.batch_id,
     start_time: row.start_time,
@@ -959,13 +1091,12 @@ const handleEdit = (row: Sensor) => {
   })
 }
 
-
-
 // 删除传感器
 const handleDelete = async (row: Sensor) => {
   try {
+    const sensorName = row.sensor_number || row.sensor_lot_no || `传感器${row.sensor_id}`
     await ElMessageBox.confirm(
-      `确定要删除传感器 "${row.sensor_name}" 吗？`,
+      `确定要删除传感器 "${sensorName}" 吗？`,
       '删除确认',
       {
         confirmButtonText: '确定',
@@ -992,9 +1123,11 @@ const handleSubmit = async () => {
     if (valid) {
       try {
         if (isEdit.value) {
-          // 编辑
           await dataStore.updateSensor(form.sensor_id, {
-            sensor_name: form.sensor_name,
+            sensor_lot_no: form.sensor_lot_no || null,
+            sensor_batch: form.sensor_batch || null,
+            sensor_number: form.sensor_number || null,
+            transmitter_id: form.transmitter_id || null,
             person_id: form.person_id,
             batch_id: form.batch_id,
             start_time: form.start_time,
@@ -1003,9 +1136,11 @@ const handleSubmit = async () => {
           })
           ElMessage.success('更新成功')
         } else {
-          // 新建
           await dataStore.addSensor({
-            sensor_name: form.sensor_name,
+            sensor_lot_no: form.sensor_lot_no || null,
+            sensor_batch: form.sensor_batch || null,
+            sensor_number: form.sensor_number || null,
+            transmitter_id: form.transmitter_id || null,
             person_id: form.person_id,
             batch_id: form.batch_id,
             start_time: form.start_time,
@@ -1015,9 +1150,7 @@ const handleSubmit = async () => {
           ElMessage.success('添加成功')
         }
         
-        // 清除相关缓存
         dataStore.clearCache('sensors')
-        
         dialogVisible.value = false
         resetForm()
       } catch (error) {
@@ -1038,24 +1171,21 @@ const handleBatchSubmit = async () => {
         let successCount = 0
         let failCount = 0
         
-        // 验证每个传感器数据项
         for (let i = 0; i < batchForm.sensorList.length; i++) {
           const sensor = batchForm.sensorList[i]
-          if (!sensor.sensor_name.trim()) {
-            ElMessage.error(`第${i + 1}个传感器名称不能为空`)
-            return
-          }
           if (!sensor.start_time) {
             ElMessage.error(`第${i + 1}个传感器开始时间不能为空`)
             return
           }
         }
         
-        // 批量添加传感器
         for (const sensor of batchForm.sensorList) {
           try {
             await dataStore.addSensor({
-              sensor_name: sensor.sensor_name,
+              sensor_lot_no: sensor.sensor_lot_no || null,
+              sensor_batch: sensor.sensor_batch || null,
+              sensor_number: sensor.sensor_number || null,
+              transmitter_id: sensor.transmitter_id || null,
               person_id: batchForm.person_id!,
               batch_id: batchForm.batch_id!,
               start_time: sensor.start_time,
@@ -1077,7 +1207,6 @@ const handleBatchSubmit = async () => {
         }
         
         if (successCount > 0) {
-          // 清除相关缓存
           dataStore.clearCache('sensors')
           batchDialogVisible.value = false
           resetBatchForm()
@@ -1097,7 +1226,10 @@ const resetForm = () => {
   }
   Object.assign(form, {
     sensor_id: 0,
-    sensor_name: '',
+    sensor_lot_no: '',
+    sensor_batch: '',
+    sensor_number: '',
+    transmitter_id: '',
     person_id: null,
     batch_id: null,
     start_time: '',
@@ -1105,27 +1237,6 @@ const resetForm = () => {
     end_reason: ''
   })
 }
-
-// 根据选择的批次过滤人员（过滤区域）
-const filteredPersonsForFilter = computed(() => {
-  if (!filterBatch.value) {
-    return availablePersonsForFilter.value
-  }
-  return availablePersonsForFilter.value.filter(person => person.batch_id.toString() === filterBatch.value)
-})
-
-// 监听过滤批次选择变化，清空人员过滤
-watch(() => filterBatch.value, (newBatchId, oldBatchId) => {
-  if (newBatchId !== oldBatchId && newBatchId) {
-    // 如果当前选择的人员不属于新批次，则清空人员过滤
-    if (filterPerson.value) {
-      const selectedPerson = availablePersonsForFilter.value.find(p => p.person_id.toString() === filterPerson.value)
-      if (!selectedPerson || selectedPerson.batch_id.toString() !== newBatchId) {
-        filterPerson.value = ''
-      }
-    }
-  }
-})
 </script>
 
 <style scoped>
@@ -1277,39 +1388,17 @@ watch(() => filterBatch.value, (newBatchId, oldBatchId) => {
   gap: 12px;
 }
 
-:deep(.el-table) {
-  font-size: 14px;
-}
-
-:deep(.el-table th) {
-  background-color: #fafafa;
-  color: #606266;
-  font-weight: 600;
-}
-
-@media (max-width: 768px) {
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .toolbar-left {
-    justify-content: center;
-  }
-  
-  .toolbar-right {
-    justify-content: center;
-  }
-  
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-cards {
-    grid-template-columns: 1fr;
-  }
+.form-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  border-radius: 6px;
+  color: #0369A1;
+  font-size: 12px;
 }
 
 /* 批量录入样式 */
@@ -1359,22 +1448,38 @@ watch(() => filterBatch.value, (newBatchId, oldBatchId) => {
   border-radius: 6px;
 }
 
-.sensor-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
+:deep(.el-table) {
+  font-size: 14px;
 }
 
-.form-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 12px;
-  background: #F0F9FF;
-  border: 1px solid #BAE6FD;
-  border-radius: 6px;
-  color: #0369A1;
-  font-size: 14px;
+:deep(.el-table th) {
+  background-color: #fafafa;
+  color: #606266;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbar-left {
+    justify-content: center;
+  }
+  
+  .toolbar-right {
+    justify-content: center;
+  }
+  
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

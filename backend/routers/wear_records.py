@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
 from database import get_db
-from models import WearRecord, Batch, Person, SensorDetail, User
+from models import WearRecord, Batch, Person, SensorDetail, Sensor, User
 from schemas import WearRecordCreate, WearRecordUpdate, WearRecordResponse, MessageResponse, SensorDetailResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -16,7 +16,7 @@ def get_used_sensors(
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取已被佩戴的传感器ID列表"""
-    used_sensor_ids = db.query(WearRecord.sensor_detail_id).distinct().all()
+    used_sensor_ids = db.query(WearRecord.sensor_id).distinct().all()
     return [sensor_id[0] for sensor_id in used_sensor_ids]
 
 @router.get("/", response_model=List[WearRecordResponse])
@@ -25,12 +25,16 @@ def get_wear_records(
     limit: int = Query(1000, ge=1, le=1000, description="返回的记录数"),
     batch_id: Optional[int] = Query(None, description="按批次筛选"),
     person_id: Optional[int] = Query(None, description="按人员筛选"),
-    sensor_detail_id: Optional[int] = Query(None, description="按传感器详细信息筛选"),
+    sensor_id: Optional[int] = Query(None, description="按传感器详细信息筛选"),
     db: Session = Depends(get_db),
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取佩戴记录列表"""
-    query = db.query(WearRecord).outerjoin(Batch).outerjoin(Person).outerjoin(SensorDetail)
+    query = db.query(WearRecord).options(
+        joinedload(WearRecord.batch),
+        joinedload(WearRecord.person),
+        joinedload(WearRecord.sensor).joinedload(Sensor.sensor_detail)
+    )
     
     if batch_id:
         query = query.filter(WearRecord.batch_id == batch_id)
@@ -38,46 +42,49 @@ def get_wear_records(
     if person_id:
         query = query.filter(WearRecord.person_id == person_id)
     
-    if sensor_detail_id:
-        query = query.filter(WearRecord.sensor_detail_id == sensor_detail_id)
+    if sensor_id:
+        query = query.filter(WearRecord.sensor_id == sensor_id)
     
     wear_records = query.offset(skip).limit(limit).all()
     
     result = []
     for record in wear_records:
         sensor_detail_data = None
-        if record.sensor_detail:
+        if record.sensor and record.sensor.sensor_detail:
             sensor_detail_data = SensorDetailResponse(
-                sensor_detail_id=record.sensor_detail.sensor_detail_id,
-                sterilization_date=record.sensor_detail.sterilization_date,
-                test_number=record.sensor_detail.test_number,
-                probe_number=record.sensor_detail.probe_number,
-                value_0=record.sensor_detail.value_0,
-                value_2=record.sensor_detail.value_2,
-                value_5=record.sensor_detail.value_5,
-                value_25=record.sensor_detail.value_25,
-                sensitivity=record.sensor_detail.sensitivity,
-                r_value=record.sensor_detail.r_value,
-                destination=record.sensor_detail.destination,
-                remarks=record.sensor_detail.remarks,
-                created_time=record.sensor_detail.created_time
+                sensor_detail_id=record.sensor.sensor_detail.sensor_detail_id,
+                sterilization_date=record.sensor.sensor_detail.sterilization_date,
+                test_number=record.sensor.sensor_detail.test_number,
+                probe_number=record.sensor.sensor_detail.probe_number,
+                value_0=record.sensor.sensor_detail.value_0,
+                value_2=record.sensor.sensor_detail.value_2,
+                value_5=record.sensor.sensor_detail.value_5,
+                value_25=record.sensor.sensor_detail.value_25,
+                sensitivity=record.sensor.sensor_detail.sensitivity,
+                r_value=record.sensor.sensor_detail.r_value,
+                destination=record.sensor.sensor_detail.destination,
+                remarks=record.sensor.sensor_detail.remarks,
+                created_time=record.sensor.sensor_detail.created_time
             )
         
         record_dict = {
             "wear_record_id": record.wear_record_id,
             "batch_id": record.batch_id,
             "person_id": record.person_id,
-            "sensor_detail_id": record.sensor_detail_id,
+            "sensor_id": record.sensor_id,
             "applicator_lot_no": record.applicator_lot_no,
             "sensor_lot_no": record.sensor_lot_no,
             "sensor_batch": record.sensor_batch,
             "sensor_number": record.sensor_number,
             "transmitter_id": record.transmitter_id,
+            "wear_position": record.wear_position,
+            "abnormal_situation": record.abnormal_situation,
+            "cause_analysis": record.cause_analysis,
             "wear_time": record.wear_time,
             "person_name": record.person.person_name if record.person else None,
             "batch_number": record.batch.batch_number if record.batch else None,
-            "test_number": record.sensor_detail.test_number if record.sensor_detail else None,
-            "probe_number": record.sensor_detail.probe_number if record.sensor_detail else None,
+            "test_number": record.sensor.sensor_detail.test_number if record.sensor and record.sensor.sensor_detail else None,
+            "probe_number": record.sensor.sensor_detail.probe_number if record.sensor and record.sensor.sensor_detail else None,
             "sensor_detail": sensor_detail_data
         }
         result.append(WearRecordResponse(**record_dict))
@@ -101,18 +108,26 @@ def create_wear_record(
     if not person:
         raise HTTPException(status_code=400, detail="指定的人员不存在")
     
-    # 验证传感器详细信息是否存在
-    sensor_detail = db.query(SensorDetail).filter(SensorDetail.sensor_detail_id == wear_record.sensor_detail_id).first()
-    if not sensor_detail:
-        raise HTTPException(status_code=400, detail="指定的传感器详细信息不存在")
+    # 验证传感器是否存在，并预加载关联的传感器详细信息
+    sensor = db.query(Sensor).options(joinedload(Sensor.sensor_detail)).filter(Sensor.sensor_id == wear_record.sensor_id).first()
+    if not sensor:
+        raise HTTPException(status_code=400, detail="指定的传感器不存在")
     
     # 检查是否已存在相同的佩戴记录（同一人员佩戴同一传感器）
     existing_record = db.query(WearRecord).filter(
         WearRecord.person_id == wear_record.person_id,
-        WearRecord.sensor_detail_id == wear_record.sensor_detail_id
+        WearRecord.sensor_id == wear_record.sensor_id
     ).first()
     if existing_record:
         raise HTTPException(status_code=400, detail="该人员已佩戴此传感器")
+    
+    # 检查同一人员是否已在相同位置佩戴其他传感器
+    existing_position_record = db.query(WearRecord).filter(
+        WearRecord.person_id == wear_record.person_id,
+        WearRecord.wear_position == wear_record.wear_position
+    ).first()
+    if existing_position_record:
+        raise HTTPException(status_code=400, detail=f"该人员已在{wear_record.wear_position}位置佩戴其他传感器设备")
     
     # 创建佩戴记录，如果没有提供wear_time则使用当前时间
     wear_record_data = wear_record.dict()
@@ -124,37 +139,43 @@ def create_wear_record(
     db.commit()
     db.refresh(db_wear_record)
     
-    sensor_detail_data = SensorDetailResponse(
-        sensor_detail_id=sensor_detail.sensor_detail_id,
-        sterilization_date=sensor_detail.sterilization_date,
-        test_number=sensor_detail.test_number,
-        probe_number=sensor_detail.probe_number,
-        value_0=sensor_detail.value_0,
-        value_2=sensor_detail.value_2,
-        value_5=sensor_detail.value_5,
-        value_25=sensor_detail.value_25,
-        sensitivity=sensor_detail.sensitivity,
-        r_value=sensor_detail.r_value,
-        destination=sensor_detail.destination,
-        remarks=sensor_detail.remarks,
-        created_time=sensor_detail.created_time
-    )
+    # 获取传感器关联的详细信息
+    sensor_detail_data = None
+    if sensor.sensor_detail:
+        sensor_detail_data = SensorDetailResponse(
+            sensor_detail_id=sensor.sensor_detail.sensor_detail_id,
+            sterilization_date=sensor.sensor_detail.sterilization_date,
+            test_number=sensor.sensor_detail.test_number,
+            probe_number=sensor.sensor_detail.probe_number,
+            value_0=sensor.sensor_detail.value_0,
+            value_2=sensor.sensor_detail.value_2,
+            value_5=sensor.sensor_detail.value_5,
+            value_25=sensor.sensor_detail.value_25,
+            sensitivity=sensor.sensor_detail.sensitivity,
+            r_value=sensor.sensor_detail.r_value,
+            destination=sensor.sensor_detail.destination,
+            remarks=sensor.sensor_detail.remarks,
+            created_time=sensor.sensor_detail.created_time
+        )
     
     result = WearRecordResponse(
         wear_record_id=db_wear_record.wear_record_id,
         batch_id=db_wear_record.batch_id,
         person_id=db_wear_record.person_id,
-        sensor_detail_id=db_wear_record.sensor_detail_id,
+        sensor_id=db_wear_record.sensor_id,
         applicator_lot_no=db_wear_record.applicator_lot_no,
         sensor_lot_no=db_wear_record.sensor_lot_no,
         sensor_batch=db_wear_record.sensor_batch,
         sensor_number=db_wear_record.sensor_number,
         transmitter_id=db_wear_record.transmitter_id,
+        wear_position=db_wear_record.wear_position,
+        abnormal_situation=db_wear_record.abnormal_situation,
+        cause_analysis=db_wear_record.cause_analysis,
         wear_time=db_wear_record.wear_time,
         person_name=person.person_name,
         batch_number=batch.batch_number,
-        test_number=sensor_detail.test_number,
-        probe_number=sensor_detail.probe_number,
+        test_number=sensor.sensor_detail.test_number if sensor.sensor_detail else None,
+        probe_number=sensor.sensor_detail.probe_number if sensor.sensor_detail else None,
         sensor_detail=sensor_detail_data
     )
     
@@ -167,43 +188,50 @@ def get_wear_record(
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取单个佩戴记录详情"""
-    wear_record = db.query(WearRecord).filter(WearRecord.wear_record_id == wear_record_id).first()
+    wear_record = db.query(WearRecord).options(
+        joinedload(WearRecord.batch),
+        joinedload(WearRecord.person),
+        joinedload(WearRecord.sensor).joinedload(Sensor.sensor_detail)
+    ).filter(WearRecord.wear_record_id == wear_record_id).first()
     if not wear_record:
         raise HTTPException(status_code=404, detail="佩戴记录不存在")
     
     sensor_detail_data = None
-    if wear_record.sensor_detail:
+    if wear_record.sensor and wear_record.sensor.sensor_detail:
         sensor_detail_data = SensorDetailResponse(
-            sensor_detail_id=wear_record.sensor_detail.sensor_detail_id,
-            sterilization_date=wear_record.sensor_detail.sterilization_date,
-            test_number=wear_record.sensor_detail.test_number,
-            probe_number=wear_record.sensor_detail.probe_number,
-            value_0=wear_record.sensor_detail.value_0,
-            value_2=wear_record.sensor_detail.value_2,
-            value_5=wear_record.sensor_detail.value_5,
-            value_25=wear_record.sensor_detail.value_25,
-            sensitivity=wear_record.sensor_detail.sensitivity,
-            r_value=wear_record.sensor_detail.r_value,
-            destination=wear_record.sensor_detail.destination,
-            remarks=wear_record.sensor_detail.remarks,
-            created_time=wear_record.sensor_detail.created_time
+            sensor_detail_id=wear_record.sensor.sensor_detail.sensor_detail_id,
+            sterilization_date=wear_record.sensor.sensor_detail.sterilization_date,
+            test_number=wear_record.sensor.sensor_detail.test_number,
+            probe_number=wear_record.sensor.sensor_detail.probe_number,
+            value_0=wear_record.sensor.sensor_detail.value_0,
+            value_2=wear_record.sensor.sensor_detail.value_2,
+            value_5=wear_record.sensor.sensor_detail.value_5,
+            value_25=wear_record.sensor.sensor_detail.value_25,
+            sensitivity=wear_record.sensor.sensor_detail.sensitivity,
+            r_value=wear_record.sensor.sensor_detail.r_value,
+            destination=wear_record.sensor.sensor_detail.destination,
+            remarks=wear_record.sensor.sensor_detail.remarks,
+            created_time=wear_record.sensor.sensor_detail.created_time
         )
     
     result = WearRecordResponse(
         wear_record_id=wear_record.wear_record_id,
         batch_id=wear_record.batch_id,
         person_id=wear_record.person_id,
-        sensor_detail_id=wear_record.sensor_detail_id,
+        sensor_id=wear_record.sensor_id,
         applicator_lot_no=wear_record.applicator_lot_no,
         sensor_lot_no=wear_record.sensor_lot_no,
         sensor_batch=wear_record.sensor_batch,
         sensor_number=wear_record.sensor_number,
         transmitter_id=wear_record.transmitter_id,
+        wear_position=wear_record.wear_position,
+        abnormal_situation=wear_record.abnormal_situation,
+        cause_analysis=wear_record.cause_analysis,
         wear_time=wear_record.wear_time,
         person_name=wear_record.person.person_name if wear_record.person else None,
         batch_number=wear_record.batch.batch_number if wear_record.batch else None,
-        test_number=wear_record.sensor_detail.test_number if wear_record.sensor_detail else None,
-        probe_number=wear_record.sensor_detail.probe_number if wear_record.sensor_detail else None,
+        test_number=wear_record.sensor.sensor_detail.test_number if wear_record.sensor and wear_record.sensor.sensor_detail else None,
+        probe_number=wear_record.sensor.sensor_detail.probe_number if wear_record.sensor and wear_record.sensor.sensor_detail else None,
         sensor_detail=sensor_detail_data
     )
     
@@ -231,21 +259,32 @@ def update_wear_record(
     if not person:
         raise HTTPException(status_code=400, detail="指定的人员不存在")
     
-    # 验证传感器详细信息是否存在
-    sensor_detail = db.query(SensorDetail).filter(SensorDetail.sensor_detail_id == wear_record.sensor_detail_id).first()
-    if not sensor_detail:
-        raise HTTPException(status_code=400, detail="指定的传感器详细信息不存在")
+    # 验证传感器是否存在，并预加载关联的传感器详细信息
+    sensor = db.query(Sensor).options(joinedload(Sensor.sensor_detail)).filter(Sensor.sensor_id == wear_record.sensor_id).first()
+    if not sensor:
+        raise HTTPException(status_code=400, detail="指定的传感器不存在")
     
     # 检查是否与其他记录冲突（同一人员佩戴同一传感器）
     if (wear_record.person_id != db_wear_record.person_id or 
-        wear_record.sensor_detail_id != db_wear_record.sensor_detail_id):
+        wear_record.sensor_id != db_wear_record.sensor_id):
         existing_record = db.query(WearRecord).filter(
             WearRecord.person_id == wear_record.person_id,
-            WearRecord.sensor_detail_id == wear_record.sensor_detail_id,
+            WearRecord.sensor_id == wear_record.sensor_id,
             WearRecord.wear_record_id != wear_record_id
         ).first()
         if existing_record:
             raise HTTPException(status_code=400, detail="该人员已佩戴此传感器")
+    
+    # 检查同一人员是否已在相同位置佩戴其他传感器（排除当前记录）
+    if (wear_record.person_id != db_wear_record.person_id or 
+        wear_record.wear_position != db_wear_record.wear_position):
+        existing_position_record = db.query(WearRecord).filter(
+            WearRecord.person_id == wear_record.person_id,
+            WearRecord.wear_position == wear_record.wear_position,
+            WearRecord.wear_record_id != wear_record_id
+        ).first()
+        if existing_position_record:
+            raise HTTPException(status_code=400, detail=f"该人员已在{wear_record.wear_position}位置佩戴其他传感器设备")
     
     # 更新佩戴记录字段
     wear_record_data = wear_record.dict(exclude_unset=True)
@@ -255,37 +294,43 @@ def update_wear_record(
     db.commit()
     db.refresh(db_wear_record)
     
-    sensor_detail_data = SensorDetailResponse(
-        sensor_detail_id=sensor_detail.sensor_detail_id,
-        sterilization_date=sensor_detail.sterilization_date,
-        test_number=sensor_detail.test_number,
-        probe_number=sensor_detail.probe_number,
-        value_0=sensor_detail.value_0,
-        value_2=sensor_detail.value_2,
-        value_5=sensor_detail.value_5,
-        value_25=sensor_detail.value_25,
-        sensitivity=sensor_detail.sensitivity,
-        r_value=sensor_detail.r_value,
-        destination=sensor_detail.destination,
-        remarks=sensor_detail.remarks,
-        created_time=sensor_detail.created_time
-    )
+    # 获取传感器关联的详细信息
+    sensor_detail_data = None
+    if sensor.sensor_detail:
+        sensor_detail_data = SensorDetailResponse(
+            sensor_detail_id=sensor.sensor_detail.sensor_detail_id,
+            sterilization_date=sensor.sensor_detail.sterilization_date,
+            test_number=sensor.sensor_detail.test_number,
+            probe_number=sensor.sensor_detail.probe_number,
+            value_0=sensor.sensor_detail.value_0,
+            value_2=sensor.sensor_detail.value_2,
+            value_5=sensor.sensor_detail.value_5,
+            value_25=sensor.sensor_detail.value_25,
+            sensitivity=sensor.sensor_detail.sensitivity,
+            r_value=sensor.sensor_detail.r_value,
+            destination=sensor.sensor_detail.destination,
+            remarks=sensor.sensor_detail.remarks,
+            created_time=sensor.sensor_detail.created_time
+        )
     
     result = WearRecordResponse(
         wear_record_id=db_wear_record.wear_record_id,
         batch_id=db_wear_record.batch_id,
         person_id=db_wear_record.person_id,
-        sensor_detail_id=db_wear_record.sensor_detail_id,
+        sensor_id=db_wear_record.sensor_id,
         applicator_lot_no=db_wear_record.applicator_lot_no,
         sensor_lot_no=db_wear_record.sensor_lot_no,
         sensor_batch=db_wear_record.sensor_batch,
         sensor_number=db_wear_record.sensor_number,
         transmitter_id=db_wear_record.transmitter_id,
+        wear_position=db_wear_record.wear_position,
+        abnormal_situation=db_wear_record.abnormal_situation,
+        cause_analysis=db_wear_record.cause_analysis,
         wear_time=db_wear_record.wear_time,
         person_name=person.person_name,
         batch_number=batch.batch_number,
-        test_number=sensor_detail.test_number,
-        probe_number=sensor_detail.probe_number,
+        test_number=sensor.sensor_detail.test_number if sensor.sensor_detail else None,
+        probe_number=sensor.sensor_detail.probe_number if sensor.sensor_detail else None,
         sensor_detail=sensor_detail_data
     )
     

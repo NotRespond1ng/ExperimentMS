@@ -2,14 +2,26 @@
   <div class="user-management">
     <div class="page-header">
       <h2>用户管理</h2>
-      <el-button type="primary" @click="showCreateDialog = true">
-        <el-icon><Plus /></el-icon>
-        新增用户
-      </el-button>
+      <p>管理系统用户和权限分配</p>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <!-- 可以在这里添加搜索框等 -->
+      </div>
+      
+      <div class="toolbar-right">
+        <el-button type="primary" @click="showCreateDialog = true">
+          <el-icon><Plus /></el-icon>
+          新增用户
+        </el-button>
+      </div>
     </div>
 
     <!-- 用户列表 -->
-    <el-table :data="users" v-loading="loading" stripe>
+    <el-card>
+      <el-table :data="users" v-loading="loading" stripe>
       <el-table-column prop="user_id" label="ID" width="80" />
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="role" label="角色">
@@ -44,7 +56,21 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+      </el-table>
+      
+      <!-- 分页组件 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="users.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
+    </el-card>
 
     <!-- 创建/编辑用户对话框 -->
     <el-dialog 
@@ -206,6 +232,10 @@ const showPermissionDialog = ref(false)
 const editingUser = ref<User | null>(null)
 const selectedUser = ref<User | null>(null)
 const userFormRef = ref<FormInstance>()
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20)
 
 const userForm = reactive({
   username: '',
@@ -428,6 +458,16 @@ const savePermissions = async () => {
   }
 }
 
+// 分页处理函数
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  currentPage.value = 1
+}
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
+}
+
 onMounted(() => {
   fetchUsers()
 })
@@ -435,19 +475,55 @@ onMounted(() => {
 
 <style scoped>
 .user-management {
-  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.page-header p {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.page-header h2 {
-  margin: 0;
-  color: #303133;
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 20px 0;
 }
 
 .permission-header {
@@ -503,5 +579,15 @@ onMounted(() => {
 
 .row-actions .el-button {
   margin: 0;
+}
+
+:deep(.el-table) {
+  font-size: 14px;
+}
+
+:deep(.el-table th) {
+  background-color: #fafafa;
+  color: #606266;
+  font-weight: 600;
 }
 </style>

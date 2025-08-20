@@ -10,7 +10,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="filterBatchId"
-          placeholder="筛选批次"
+          placeholder="筛选实验批次"
           clearable
           style="width: 150px; margin-right: 12px"
           @change="handleFilter"
@@ -129,7 +129,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="关联批次" min-width="150">
+        <el-table-column label="关联实验批次" min-width="150">
           <template #default="{ row }">
             <el-tag type="primary">
               {{ getBatchNumber(row.batch_id) }}
@@ -192,10 +192,10 @@
         :rules="rules"
         label-width="120px"
       >
-        <el-form-item label="关联批次" prop="batch_id">
+        <el-form-item label="关联实验批次" prop="batch_id">
           <el-select
             v-model="form.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
           >
             <el-option
@@ -221,7 +221,7 @@
             />
           </el-select>
           <div class="form-tip">
-            {{ form.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+            {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
           </div>
         </el-form-item>
         
@@ -275,10 +275,10 @@
         label-width="120px"
         label-position="left"
       >
-        <el-form-item label="关联批次" prop="batch_id">
+        <el-form-item label="关联实验批次" prop="batch_id">
           <el-select
             v-model="batchForm.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
           >
             <el-option
@@ -304,7 +304,7 @@
             />
           </el-select>
           <div class="form-tip">
-            {{ batchForm.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+            {{ batchForm.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
           </div>
         </el-form-item>
 

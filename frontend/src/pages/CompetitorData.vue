@@ -10,7 +10,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="filterBatchId"
-          placeholder="筛选批次"
+          placeholder="筛选实验批次"
           clearable
           style="width: 200px; margin-right: 12px"
           @change="handleFilter"
@@ -76,7 +76,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="关联批次" width="150">
+        <el-table-column label="关联实验批次" width="150">
           <template #default="{ row }">
             <el-tag type="primary">
               {{ getBatchNumber(row.batch_id) }}
@@ -160,10 +160,10 @@
         :rules="uploadRules"
         label-width="100px"
       >
-        <el-form-item label="关联批次" prop="batch_id">
+        <el-form-item label="关联实验批次" prop="batch_id">
           <el-select
             v-model="uploadForm.batch_id"
-            placeholder="请选择批次"
+            placeholder="请选择实验批次"
             style="width: 100%"
           >
             <el-option
@@ -189,7 +189,7 @@
             />
           </el-select>
           <div class="form-tip">
-            {{ uploadForm.batch_id ? '显示该批次下的人员' : '请先选择批次' }}
+            {{ uploadForm.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
           </div>
         </el-form-item>
         
@@ -365,7 +365,7 @@ const renameForm = reactive({
 
 const uploadRules = {
   batch_id: [
-    { required: true, message: '请选择关联批次', trigger: 'change' }
+    { required: true, message: '请选择关联实验批次', trigger: 'change' }
   ],
   person_id: [
     { required: true, message: '请选择关联人员', trigger: 'change' }
@@ -644,7 +644,7 @@ const handleExport = () => {
     const exportData = filteredFiles.value.map(item => ({
       '文件ID': item.competitor_file_id,
       '文件名': getFileName(item),
-      '关联批次': getBatchNumber(item.batch_id),
+      '关联实验批次': getBatchNumber(item.batch_id),
       '关联人员': getPersonName(item.person_id),
       '文件大小': getFileSize(item),
       '上传时间': formatDateTime(item.upload_time)
@@ -671,7 +671,7 @@ const handleExport = () => {
     exportToExcel(exportData, filename, {
       '文件ID': 10,
       '文件名': 30,
-      '关联批次': 20,
+      '关联实验批次': 20,
       '关联人员': 25,
       '文件大小': 15,
       '上传时间': 20
