@@ -7,7 +7,8 @@ import type {
   Experiment,
   CompetitorFile,
   FingerBloodData,
-  Sensor
+  Sensor,
+  SensorDetail
 } from '../services/api'
 
 // 重新导出类型
@@ -17,7 +18,8 @@ export type {
   Experiment,
   CompetitorFile,
   FingerBloodData,
-  Sensor
+  Sensor,
+  SensorDetail
 }
 
 export const useDataStore = defineStore('data', () => {
@@ -28,6 +30,7 @@ export const useDataStore = defineStore('data', () => {
   const competitorFiles = ref<CompetitorFile[]>([])
   const fingerBloodData = ref<FingerBloodData[]>([])
   const sensors = ref<Sensor[]>([])
+  const sensorDetails = ref<SensorDetail[]>([])
   
   // 加载状态
   const loading = ref(false)
@@ -41,6 +44,7 @@ export const useDataStore = defineStore('data', () => {
     competitorFiles: false,
     fingerBloodData: false,
     sensors: false,
+    sensorDetails: false,
     initialized: false
   })
   
@@ -156,6 +160,23 @@ export const useDataStore = defineStore('data', () => {
       return data
     } catch (err) {
       console.error('Failed to load sensors:', err)
+      throw err
+    }
+  }
+
+  const loadSensorDetails = async (force = false) => {
+    if (!force && dataLoaded.value.sensorDetails && !isCacheExpired('sensorDetails')) {
+      return sensorDetails.value
+    }
+    
+    try {
+      const data = await ApiService.getSensorDetails()
+      sensorDetails.value = data
+      dataLoaded.value.sensorDetails = true
+      lastLoadTime.value.sensorDetails = Date.now()
+      return data
+    } catch (err) {
+      console.error('Failed to load sensor details:', err)
       throw err
     }
   }
@@ -462,6 +483,9 @@ export const useDataStore = defineStore('data', () => {
     } else if (dataType === 'sensors') {
       dataLoaded.value.sensors = false
       delete lastLoadTime.value.sensors
+    } else if (dataType === 'sensorDetails') {
+      dataLoaded.value.sensorDetails = false
+      delete lastLoadTime.value.sensorDetails
     } else if (dataType === 'all') {
       // 清除所有缓存
       dataLoaded.value = {
@@ -471,6 +495,7 @@ export const useDataStore = defineStore('data', () => {
         competitorFiles: false,
         fingerBloodData: false,
         sensors: false,
+        sensorDetails: false,
         initialized: false
       }
       lastLoadTime.value = {}
@@ -485,6 +510,7 @@ export const useDataStore = defineStore('data', () => {
     competitorFiles,
     fingerBloodData,
     sensors,
+    sensorDetails,
     // 状态
     loading,
     error,
@@ -500,6 +526,7 @@ export const useDataStore = defineStore('data', () => {
     loadCompetitorFiles,
     loadFingerBloodData,
     loadSensors,
+    loadSensorDetails,
     // 批次管理
     addBatch,
     updateBatch,

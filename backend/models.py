@@ -185,11 +185,7 @@ class SensorDetail(Base):
     # 关系
     sensors = relationship("Sensor", back_populates="sensor_detail")
 
-class WearPositionEnum(enum.Enum):
-    LEFT_ONE = "LEFT_ONE"
-    LEFT_TWO = "LEFT_TWO"
-    RIGHT_ONE = "RIGHT_ONE"
-    RIGHT_TWO = "RIGHT_TWO"
+
 
 class WearRecord(Base):
     __tablename__ = "wear_records"
@@ -198,13 +194,16 @@ class WearRecord(Base):
     batch_id = Column(Integer, ForeignKey("batches.batch_id"), nullable=False, comment="关联的批次ID")
     person_id = Column(Integer, ForeignKey("persons.person_id"), nullable=False, comment="关联的人员ID")
     sensor_id = Column(Integer, ForeignKey("sensors.sensor_id"), nullable=False, comment="关联的传感器ID")
+    sensor_detail_id = Column(Integer, ForeignKey("sensor_details.sensor_detail_id"), nullable=True, comment="关联的传感器详细信息ID")
     applicator_lot_no = Column(String(255), nullable=True, comment="敷贴器批号")
     sensor_lot_no = Column(String(255), nullable=True, comment="传感器批号")
     sensor_batch = Column(String(255), nullable=True, comment="传感器批次")
     sensor_number = Column(String(255), nullable=True, comment="传感器号")
     transmitter_id = Column(String(255), nullable=True, comment="发射器号")
     wear_time = Column(DateTime, nullable=False, default=datetime.now, comment="佩戴记录创建时间")
-    wear_position = Column(Enum(WearPositionEnum), nullable=True, comment="传感器佩戴位置")
+    wear_position = Column(String(20), nullable=True, comment="传感器佩戴位置")
+    user_name = Column(String(100), nullable=True, comment="人员信息")
+    nickname = Column(String(50), nullable=True, comment="用户名称")
     abnormal_situation = Column(Text, nullable=True, comment="记录发生的异常情况")
     cause_analysis = Column(Text, nullable=True, comment="对异常情况的原因分析")
     
@@ -212,6 +211,7 @@ class WearRecord(Base):
     batch = relationship("Batch")
     person = relationship("Person")
     sensor = relationship("Sensor", back_populates="wear_records")
+    sensor_detail = relationship("SensorDetail")
 
 class DailyExperimentData(Base):
     __tablename__ = "daily_experiment_data"

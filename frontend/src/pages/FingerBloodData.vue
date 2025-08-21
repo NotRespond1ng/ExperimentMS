@@ -12,7 +12,7 @@
           v-model="filterBatchId"
           placeholder="筛选实验批次"
           clearable
-          style="width: 150px; margin-right: 12px"
+          style="width: 130px; margin-right: 12px"
           @change="handleFilter"
         >
           <el-option
@@ -27,7 +27,7 @@
           v-model="filterPersonId"
           placeholder="筛选人员"
           clearable
-          style="width: 150px; margin-right: 12px"
+          style="width: 130px; margin-right: 12px"
           @change="handleFilter"
         >
           <el-option
@@ -46,7 +46,7 @@
           end-placeholder="结束时间"
           format="YYYY-MM-DD HH:mm:ss"
           value-format="YYYY-MM-DD HH:mm:ss"
-          style="width: 350px"
+          style="width: 280px"
           @change="handleFilter"
         />
       </div>

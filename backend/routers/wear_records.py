@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, contains_eager
 from typing import List, Optional
 from datetime import datetime
 from database import get_db
@@ -30,11 +30,16 @@ def get_wear_records(
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取佩戴记录列表"""
-    query = db.query(WearRecord).options(
-        joinedload(WearRecord.batch),
-        joinedload(WearRecord.person),
-        joinedload(WearRecord.sensor).joinedload(Sensor.sensor_detail)
-    )
+    query = db.query(WearRecord)\
+        .outerjoin(WearRecord.batch)\
+        .outerjoin(WearRecord.person)\
+        .outerjoin(WearRecord.sensor)\
+        .outerjoin(Sensor.sensor_detail)\
+        .options(
+            contains_eager(WearRecord.batch),
+            contains_eager(WearRecord.person),
+            contains_eager(WearRecord.sensor).contains_eager(Sensor.sensor_detail)
+        )
     
     if batch_id:
         query = query.filter(WearRecord.batch_id == batch_id)
@@ -78,6 +83,8 @@ def get_wear_records(
             "sensor_number": record.sensor_number,
             "transmitter_id": record.transmitter_id,
             "wear_position": record.wear_position,
+            "nickname": record.nickname,
+            "user_name": record.user_name,
             "abnormal_situation": record.abnormal_situation,
             "cause_analysis": record.cause_analysis,
             "wear_time": record.wear_time,
@@ -134,6 +141,15 @@ def create_wear_record(
     if wear_record_data.get('wear_time') is None:
         wear_record_data['wear_time'] = datetime.now()
     
+    # 设置nickname字段（从wear_record获取）
+    wear_record_data['nickname'] = wear_record.nickname if hasattr(wear_record, 'nickname') and wear_record.nickname else person.person_name
+    # 设置user_name字段（从person获取）
+    wear_record_data['user_name'] = person.person_name
+    
+    # 设置sensor_detail_id字段（从sensor获取）
+    if sensor.sensor_detail:
+        wear_record_data['sensor_detail_id'] = sensor.sensor_detail.sensor_detail_id
+    
     db_wear_record = WearRecord(**wear_record_data)
     db.add(db_wear_record)
     db.commit()
@@ -169,6 +185,8 @@ def create_wear_record(
         sensor_number=db_wear_record.sensor_number,
         transmitter_id=db_wear_record.transmitter_id,
         wear_position=db_wear_record.wear_position,
+        nickname=db_wear_record.nickname,
+        user_name=db_wear_record.user_name,
         abnormal_situation=db_wear_record.abnormal_situation,
         cause_analysis=db_wear_record.cause_analysis,
         wear_time=db_wear_record.wear_time,
@@ -188,11 +206,16 @@ def get_wear_record(
     current_user: User = Depends(check_module_permission(ModuleEnum.WEAR_RECORDS, "read"))
 ):
     """获取单个佩戴记录详情"""
-    wear_record = db.query(WearRecord).options(
-        joinedload(WearRecord.batch),
-        joinedload(WearRecord.person),
-        joinedload(WearRecord.sensor).joinedload(Sensor.sensor_detail)
-    ).filter(WearRecord.wear_record_id == wear_record_id).first()
+    wear_record = db.query(WearRecord)\
+        .outerjoin(WearRecord.batch)\
+        .outerjoin(WearRecord.person)\
+        .outerjoin(WearRecord.sensor)\
+        .outerjoin(Sensor.sensor_detail)\
+        .options(
+            contains_eager(WearRecord.batch),
+            contains_eager(WearRecord.person),
+            contains_eager(WearRecord.sensor).contains_eager(Sensor.sensor_detail)
+        ).filter(WearRecord.wear_record_id == wear_record_id).first()
     if not wear_record:
         raise HTTPException(status_code=404, detail="佩戴记录不存在")
     
@@ -225,6 +248,8 @@ def get_wear_record(
         sensor_number=wear_record.sensor_number,
         transmitter_id=wear_record.transmitter_id,
         wear_position=wear_record.wear_position,
+        nickname=wear_record.nickname,
+        user_name=wear_record.user_name,
         abnormal_situation=wear_record.abnormal_situation,
         cause_analysis=wear_record.cause_analysis,
         wear_time=wear_record.wear_time,
@@ -290,6 +315,17 @@ def update_wear_record(
     wear_record_data = wear_record.dict(exclude_unset=True)
     for field, value in wear_record_data.items():
         setattr(db_wear_record, field, value)
+    
+    # 更新nickname字段（从wear_record获取）
+    db_wear_record.nickname = wear_record.nickname if hasattr(wear_record, 'nickname') and wear_record.nickname else person.person_name
+    # 更新user_name字段（从person获取）
+    db_wear_record.user_name = person.person_name
+    
+    # 更新sensor_detail_id字段（从sensor获取）
+    if sensor.sensor_detail:
+        db_wear_record.sensor_detail_id = sensor.sensor_detail.sensor_detail_id
+    else:
+        db_wear_record.sensor_detail_id = None
     
     db.commit()
     db.refresh(db_wear_record)

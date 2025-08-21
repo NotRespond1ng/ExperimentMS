@@ -92,6 +92,7 @@ export interface Sensor {
   transmitter_id?: string
   person_id: number
   batch_id: number
+  sensor_detail_id?: number
   start_time: string
   end_time?: string
   end_reason?: string
@@ -120,12 +121,17 @@ export interface WearRecord {
   batch_id: number
   person_id: number
   sensor_id: number           // 关联sensors表的sensor_id
+  sensor_detail_id?: number   // 关联sensor_details表的sensor_detail_id
   applicator_lot_no?: string  // 敷贴器批号
   sensor_lot_no?: string      // 传感器批号
   sensor_batch?: string       // 传感器批次
   sensor_number?: string      // 传感器号
   transmitter_id?: string     // 发射器号
+  test_number?: string        // 测试编号
+  probe_number?: string       // 探针编号
   wear_position?: string      // 佩戴位置
+  user_name?: string          // 用户名称
+  nickname?: string           // 昵称
   abnormal_situation?: string // 异常情况
   cause_analysis?: string     // 原因分析
   wear_time?: string

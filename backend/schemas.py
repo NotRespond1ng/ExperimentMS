@@ -147,6 +147,7 @@ class SensorBase(BaseModelWithConfig):
     sensor_batch: Optional[str] = None
     sensor_number: Optional[str] = None
     transmitter_id: Optional[str] = None
+    sensor_detail_id: Optional[int] = None
     start_time: datetime
     end_time: Optional[datetime] = None
     end_reason: Optional[str] = None
@@ -191,12 +192,15 @@ class WearRecordBase(BaseModelWithConfig):
     batch_id: int
     person_id: int
     sensor_id: int
+    sensor_detail_id: Optional[int] = None
     applicator_lot_no: Optional[str] = None
     sensor_lot_no: Optional[str] = None
     sensor_batch: Optional[str] = None
     sensor_number: Optional[str] = None
     transmitter_id: Optional[str] = None
     wear_position: Optional[str] = None
+    user_name: Optional[str] = None
+    nickname: Optional[str] = None
     abnormal_situation: Optional[str] = None
     cause_analysis: Optional[str] = None
 

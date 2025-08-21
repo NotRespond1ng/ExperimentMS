@@ -70,13 +70,7 @@
             <template #title>实验数据分析</template>
           </el-menu-item>
           
-          <el-menu-item 
-            v-if="hasPermission('sensor_data')"
-            index="/sensors"
-          >
-            <el-icon><Monitor /></el-icon>
-            <template #title>传感器管理</template>
-          </el-menu-item>
+
           
           <el-menu-item 
             v-if="hasPermission('sensor_details')"
@@ -84,6 +78,14 @@
           >
             <el-icon><CircleCheck /></el-icon>
             <template #title>传感器详细信息</template>
+          </el-menu-item>
+          
+          <el-menu-item 
+            v-if="hasPermission('sensor_data')"
+            index="/sensors"
+          >
+            <el-icon><Monitor /></el-icon>
+            <template #title>传感器管理</template>
           </el-menu-item>
           
           <el-menu-item 

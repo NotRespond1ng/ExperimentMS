@@ -265,7 +265,10 @@ const moduleNames = {
   'experiment_management': '实验管理',
   'competitor_data': '竞品数据',
   'finger_blood_data': '指尖血数据',
-  'sensor_data': '传感器数据'
+  'sensor_data': '传感器数据',
+  'sensor_detail_management': '传感器详细信息管理',
+  'experiment_data_analysis': '实验数据分析',
+  'wear_record_management': '佩戴记录管理'
 }
 
 const getModuleName = (module: string) => {
