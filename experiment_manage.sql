@@ -11,7 +11,7 @@
  Target Server Version : 80034
  File Encoding         : 65001
 
- Date: 20/08/2025 18:45:09
+ Date: 20/08/2025 20:48:42
 */
 
 SET NAMES utf8mb4;
@@ -34,6 +34,20 @@ CREATE TABLE `activities`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of activities
+-- ----------------------------
+INSERT INTO `activities` VALUES (1, 'experiment_update', '更新了实验 5', '2025-07-23 12:11:07', NULL);
+INSERT INTO `activities` VALUES (2, 'data_export', '导出了竞品数据', '2025-07-23 12:12:08', NULL);
+INSERT INTO `activities` VALUES (3, 'data_export', '导出了竞品数据', '2025-07-23 12:12:22', NULL);
+INSERT INTO `activities` VALUES (4, 'data_export', '导出了竞品数据', '2025-07-23 12:17:56', NULL);
+INSERT INTO `activities` VALUES (5, '导出指尖血数据', '导出了3条指尖血数据', '2025-07-23 12:18:03', NULL);
+INSERT INTO `activities` VALUES (6, 'experiment_delete', '删除了实验 3', '2025-07-23 12:37:36', NULL);
+INSERT INTO `activities` VALUES (7, 'experiment_update', '更新了实验 4', '2025-07-24 01:45:40', NULL);
+INSERT INTO `activities` VALUES (8, 'experiment_create', '创建了实验 6，批次：003，成员：王五, 李四, 张三', '2025-07-24 10:37:54', NULL);
+INSERT INTO `activities` VALUES (9, 'experiment_create', '创建了实验 7，批次：003，成员：张三, 李四, 王五', '2025-07-24 10:47:19', NULL);
+INSERT INTO `activities` VALUES (10, 'experiment_update', '更新了实验 7', '2025-07-26 06:53:34', NULL);
+
+-- ----------------------------
 -- Table structure for batches
 -- ----------------------------
 DROP TABLE IF EXISTS `batches`;
@@ -46,6 +60,21 @@ CREATE TABLE `batches`  (
   PRIMARY KEY (`batch_id`) USING BTREE,
   UNIQUE INDEX `batch_number`(`batch_number` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批次管理表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of batches
+-- ----------------------------
+INSERT INTO `batches` VALUES (1, '0723', '2024-07-01 09:00:00', '2024-07-16 17:00:00', 28);
+INSERT INTO `batches` VALUES (2, '0724', '2024-07-05 10:30:00', '2024-07-20 16:00:00', 1);
+INSERT INTO `batches` VALUES (3, '0729', '2024-07-10 14:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (4, '0731', '2025-07-22 00:00:00', NULL, 1);
+INSERT INTO `batches` VALUES (5, '0806', '2025-07-23 00:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (6, '0813', '2025-07-24 00:00:00', '2025-08-07 00:00:00', 0);
+INSERT INTO `batches` VALUES (7, '002', '2025-07-30 00:00:00', NULL, 0);
+INSERT INTO `batches` VALUES (8, '003', '2025-07-15 00:00:00', '2025-07-26 00:00:00', 3);
+INSERT INTO `batches` VALUES (9, '00001', '2025-08-07 16:08:58', NULL, 2);
+INSERT INTO `batches` VALUES (10, '测试批次', '2025-08-08 00:00:00', NULL, 1);
+INSERT INTO `batches` VALUES (11, '99809', '2025-08-09 00:00:00', NULL, 0);
 
 -- ----------------------------
 -- Table structure for competitor_files
@@ -64,6 +93,11 @@ CREATE TABLE `competitor_files`  (
   CONSTRAINT `competitor_files_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `competitor_files_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '竞品文件表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of competitor_files
+-- ----------------------------
+INSERT INTO `competitor_files` VALUES (14, 35, 9, 'D:\\Trae_Projects\\ExprimentMS\\backend\\uploads\\competitor_files\\伍珊珊-数据图谱(血糖版).xlsx', '2025-08-07 19:59:25');
 
 -- ----------------------------
 -- Table structure for daily_experiment_data
@@ -85,6 +119,25 @@ CREATE TABLE `daily_experiment_data`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '每日体内实验数据记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of daily_experiment_data
+-- ----------------------------
+INSERT INTO `daily_experiment_data` VALUES (1, 1, 1, 1, 12.34567, 15.12345, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (2, 1, 1, 2, 11.98765, 14.87654, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (3, 1, 1, 3, 12.11111, 14.99999, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (4, 1, 1, 4, 12.55500, 15.33300, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (5, 1, 1, 5, 11.80000, 14.50000, '2024-07-24');
+INSERT INTO `daily_experiment_data` VALUES (6, 2, 2, 1, 9.87654, 11.23456, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (7, 2, 2, 2, 10.12345, 11.54321, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (8, 2, 2, 3, 9.99999, 11.11111, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (9, 2, 2, 4, 10.30000, 11.80000, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (10, 2, 2, 5, NULL, 11.40000, '2024-07-24');
+INSERT INTO `daily_experiment_data` VALUES (11, 3, 3, 1, 14.50000, 18.20000, '2024-07-20');
+INSERT INTO `daily_experiment_data` VALUES (12, 3, 3, 2, 14.25000, 17.95000, '2024-07-21');
+INSERT INTO `daily_experiment_data` VALUES (13, 3, 3, 3, 14.65000, 18.55000, '2024-07-22');
+INSERT INTO `daily_experiment_data` VALUES (14, 3, 3, 4, 14.80000, NULL, '2024-07-23');
+INSERT INTO `daily_experiment_data` VALUES (15, 3, 3, 5, 14.10000, 17.80000, '2024-07-24');
+
+-- ----------------------------
 -- Table structure for experiment_members
 -- ----------------------------
 DROP TABLE IF EXISTS `experiment_members`;
@@ -101,6 +154,26 @@ CREATE TABLE `experiment_members`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验成员关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of experiment_members
+-- ----------------------------
+INSERT INTO `experiment_members` VALUES (8, 2, 1, '2025-07-23 19:58:39');
+INSERT INTO `experiment_members` VALUES (9, 2, 2, '2025-07-23 19:58:39');
+INSERT INTO `experiment_members` VALUES (10, 2, 3, '2025-07-23 19:58:39');
+INSERT INTO `experiment_members` VALUES (11, 5, 2, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (12, 5, 1, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (13, 5, 3, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (14, 5, 5, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (15, 5, 6, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (16, 5, 7, '2025-07-23 20:11:07');
+INSERT INTO `experiment_members` VALUES (17, 4, 4, '2025-07-24 09:45:39');
+INSERT INTO `experiment_members` VALUES (18, 6, 29, '2025-07-24 18:37:54');
+INSERT INTO `experiment_members` VALUES (19, 6, 28, '2025-07-24 18:37:54');
+INSERT INTO `experiment_members` VALUES (20, 6, 27, '2025-07-24 18:37:54');
+INSERT INTO `experiment_members` VALUES (24, 7, 27, '2025-07-26 14:53:34');
+INSERT INTO `experiment_members` VALUES (25, 7, 28, '2025-07-26 14:53:34');
+INSERT INTO `experiment_members` VALUES (26, 7, 29, '2025-07-26 14:53:34');
+
+-- ----------------------------
 -- Table structure for experiments
 -- ----------------------------
 DROP TABLE IF EXISTS `experiments`;
@@ -113,6 +186,15 @@ CREATE TABLE `experiments`  (
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `experiments_ibfk_1` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验管理表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of experiments
+-- ----------------------------
+INSERT INTO `experiments` VALUES (2, 1, '测试批次1中李四的睡眠质量分析', '2025-07-23 19:51:23');
+INSERT INTO `experiments` VALUES (4, 4, '1232132412412', '2025-07-23 19:51:23');
+INSERT INTO `experiments` VALUES (5, 5, '123123123', '2025-07-23 19:51:23');
+INSERT INTO `experiments` VALUES (6, 8, '哈哈哈哈哈哈哈哈哈', '2025-07-24 10:37:54');
+INSERT INTO `experiments` VALUES (7, 8, '12312313顶顶顶顶', '2025-07-24 10:47:19');
 
 -- ----------------------------
 -- Table structure for finger_blood_files
@@ -132,6 +214,34 @@ CREATE TABLE `finger_blood_files`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '指尖血文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of finger_blood_files
+-- ----------------------------
+INSERT INTO `finger_blood_files` VALUES (12, 27, 8, '2025-07-23 00:00:00', 5.10);
+INSERT INTO `finger_blood_files` VALUES (13, 27, 8, '2025-07-23 01:00:00', 5.00);
+INSERT INTO `finger_blood_files` VALUES (14, 27, 8, '2025-07-23 02:00:00', 4.90);
+INSERT INTO `finger_blood_files` VALUES (15, 27, 8, '2025-07-23 03:00:00', 4.80);
+INSERT INTO `finger_blood_files` VALUES (16, 27, 8, '2025-07-23 04:00:00', 4.85);
+INSERT INTO `finger_blood_files` VALUES (17, 27, 8, '2025-07-23 05:00:00', 4.90);
+INSERT INTO `finger_blood_files` VALUES (18, 27, 8, '2025-07-23 06:00:00', 5.20);
+INSERT INTO `finger_blood_files` VALUES (19, 27, 8, '2025-07-23 07:00:00', 5.60);
+INSERT INTO `finger_blood_files` VALUES (20, 27, 8, '2025-07-23 08:00:00', 6.40);
+INSERT INTO `finger_blood_files` VALUES (21, 27, 8, '2025-07-23 09:00:00', 6.10);
+INSERT INTO `finger_blood_files` VALUES (22, 27, 8, '2025-07-23 10:00:00', 5.70);
+INSERT INTO `finger_blood_files` VALUES (23, 27, 8, '2025-07-23 11:00:00', 5.30);
+INSERT INTO `finger_blood_files` VALUES (24, 27, 8, '2025-07-23 12:00:00', 6.90);
+INSERT INTO `finger_blood_files` VALUES (25, 27, 8, '2025-07-23 13:00:00', 7.20);
+INSERT INTO `finger_blood_files` VALUES (26, 27, 8, '2025-07-23 14:00:00', 6.60);
+INSERT INTO `finger_blood_files` VALUES (27, 27, 8, '2025-07-23 15:00:00', 6.00);
+INSERT INTO `finger_blood_files` VALUES (28, 27, 8, '2025-07-23 16:00:00', 5.50);
+INSERT INTO `finger_blood_files` VALUES (29, 27, 8, '2025-07-23 17:00:00', 5.30);
+INSERT INTO `finger_blood_files` VALUES (30, 27, 8, '2025-07-23 18:00:00', 6.50);
+INSERT INTO `finger_blood_files` VALUES (31, 27, 8, '2025-07-23 19:00:00', 7.00);
+INSERT INTO `finger_blood_files` VALUES (32, 27, 8, '2025-07-23 20:00:00', 6.40);
+INSERT INTO `finger_blood_files` VALUES (33, 27, 8, '2025-07-23 21:00:00', 5.80);
+INSERT INTO `finger_blood_files` VALUES (34, 27, 8, '2025-07-23 22:00:00', 5.40);
+INSERT INTO `finger_blood_files` VALUES (35, 27, 8, '2025-07-23 23:00:00', 5.20);
+
+-- ----------------------------
 -- Table structure for persons
 -- ----------------------------
 DROP TABLE IF EXISTS `persons`;
@@ -145,6 +255,46 @@ CREATE TABLE `persons`  (
   INDEX `fk_persons_batch`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `fk_persons_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员管理表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of persons
+-- ----------------------------
+INSERT INTO `persons` VALUES (1, '张三', 'Male', 30, 1);
+INSERT INTO `persons` VALUES (2, '李四', 'Female', 25, 1);
+INSERT INTO `persons` VALUES (3, '王五', 'Male', 40, 1);
+INSERT INTO `persons` VALUES (4, '哈哈', 'Male', 120, 1);
+INSERT INTO `persons` VALUES (5, 'hahhah', 'Male', NULL, 1);
+INSERT INTO `persons` VALUES (6, '赵六', 'Male', 28, 1);
+INSERT INTO `persons` VALUES (7, '钱七', 'Female', 22, 1);
+INSERT INTO `persons` VALUES (8, '孙八', 'Male', 35, 1);
+INSERT INTO `persons` VALUES (9, '周九', 'Female', 29, 1);
+INSERT INTO `persons` VALUES (10, '吴十', 'Male', 42, 1);
+INSERT INTO `persons` VALUES (11, '郑十一', 'Female', 26, 1);
+INSERT INTO `persons` VALUES (12, '王十二', 'Male', 31, 1);
+INSERT INTO `persons` VALUES (13, '冯十三', 'Female', 27, 1);
+INSERT INTO `persons` VALUES (14, '陈十四', 'Male', 38, 1);
+INSERT INTO `persons` VALUES (15, '褚十五', 'Female', 24, 1);
+INSERT INTO `persons` VALUES (16, '卫十六', 'Male', 33, 1);
+INSERT INTO `persons` VALUES (17, '蒋十七', 'Female', 25, 1);
+INSERT INTO `persons` VALUES (18, '沈十八', 'Male', 45, 1);
+INSERT INTO `persons` VALUES (19, '韩十九', 'Female', 28, 1);
+INSERT INTO `persons` VALUES (20, '杨二十', 'Male', 36, 1);
+INSERT INTO `persons` VALUES (21, '朱二十一', 'Female', 30, 1);
+INSERT INTO `persons` VALUES (22, '秦二十二', 'Male', 34, 1);
+INSERT INTO `persons` VALUES (23, '尤二十三', 'Female', 23, 4);
+INSERT INTO `persons` VALUES (24, '许二十四', 'Male', 40, 2);
+INSERT INTO `persons` VALUES (25, '何二十五', 'Female', 32, 1);
+INSERT INTO `persons` VALUES (26, 'adada', 'Male', NULL, 1);
+INSERT INTO `persons` VALUES (27, '张三', 'Male', 24, 8);
+INSERT INTO `persons` VALUES (28, '李四', 'Male', NULL, 8);
+INSERT INTO `persons` VALUES (29, '王五', 'Male', NULL, 8);
+INSERT INTO `persons` VALUES (30, '测试人员', 'Male', 25, 1);
+INSERT INTO `persons` VALUES (31, '测试人员', 'Male', 25, 1);
+INSERT INTO `persons` VALUES (32, '测试人员', 'Male', 25, 1);
+INSERT INTO `persons` VALUES (33, '测试人员', 'Male', 25, 1);
+INSERT INTO `persons` VALUES (34, '123123', NULL, NULL, 9);
+INSERT INTO `persons` VALUES (35, '24444', NULL, NULL, 9);
+INSERT INTO `persons` VALUES (36, '小明', 'Female', 34, 10);
 
 -- ----------------------------
 -- Table structure for sensor_details
@@ -168,6 +318,28 @@ CREATE TABLE `sensor_details`  (
   UNIQUE INDEX `uk_test_number`(`test_number` ASC) USING BTREE,
   UNIQUE INDEX `uk_probe_number`(`probe_number` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 75 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器详细信息表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of sensor_details
+-- ----------------------------
+INSERT INTO `sensor_details` VALUES (1, '2024-05-17', '7-003-49', 'E051501', 0.0000, 2.7100, 6.9200, 40.6700, 1.5367160000, 0.9916904170, '去向1', '0619A', '2025-08-08 10:00:01');
+INSERT INTO `sensor_details` VALUES (2, '2024-05-17', '7-003-54', 'E051503', 0.0000, 2.9200, 7.2700, 35.3400, 1.5015540000, 0.9960834830, '去向2', '0619B', '2025-08-08 10:00:01');
+INSERT INTO `sensor_details` VALUES (3, '2025-08-08', '7-003-59', '09002', 4.0000, 2.0000, 4.0000, 5.0000, 4.0000000000, 1.0000000000, '213124', '', '2025-08-08 10:33:45');
+INSERT INTO `sensor_details` VALUES (60, '2025-06-27', '5-007-12', 'D061706', 0.0000, 3.6300, 8.5500, 30.8700, 1.5200000000, 0.9940860000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (61, '2025-06-27', '5-007-04', 'C061704', 0.0000, 3.6800, 8.6600, 31.2800, 1.5200000000, 0.9941550000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (62, '2025-06-27', '5-007-02', 'C061702', 0.0000, 3.8100, 8.9500, 32.1600, 1.5700000000, 0.9938300000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (63, '2025-06-27', '5-007-48', 'B061806', 0.0000, 4.0400, 9.5200, 34.3500, 1.7000000000, 0.9939900000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (64, '2025-06-27', '5-007-03', 'C061703', 0.0000, 4.1500, 9.6900, 33.6300, 1.6900000000, 0.9926070000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (65, '2025-06-27', '5-007-47', 'B061805', 0.0000, 4.1100, 9.7200, 35.5500, 1.7200000000, 0.9946990000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (66, '2025-06-27', '5-007-46', 'B061804', 0.0000, 4.1400, 9.7300, 34.8500, 1.7100000000, 0.9938900000, NULL, '已经坏了', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (67, '2025-06-27', '5-006-36', 'I061710', 0.0000, 4.2300, 10.0200, 37.1100, 1.7600000000, 0.9950280000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (68, '2025-06-27', '5-007-01', 'C061701', 0.0000, 4.3000, 10.0600, 35.1500, 1.7600000000, 0.9928450000, NULL, '嘻嘻哈哈', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (69, '2025-06-27', '5-007-38', 'A061802', 0.0000, 4.2500, 10.1400, 38.9800, 1.8300000000, 0.9963410000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (70, '2025-06-27', '5-007-10', 'D061704', 0.0000, 4.2700, 10.1700, 38.4900, 1.8400000000, 0.9957360000, NULL, '不知道了', '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (71, '2025-06-27', '5-007-42', 'A061806', 0.0000, 4.3700, 10.2200, 35.8500, 1.8100000000, 0.9925780000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (72, '2025-06-27', '5-007-39', 'A061803', 0.0000, 4.3200, 10.2400, 38.1600, 1.8200000000, 0.9954270000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (73, '2025-06-27', '5-007-09', 'D061703', 0.0000, 4.3100, 10.2600, 38.9800, 1.8700000000, 0.9957770000, NULL, NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (74, '2025-06-27', '5-007-11', 'D061705', 0.0000, 4.3600, 10.3300, 38.4900, 1.8400000000, 0.9954180000, '测试', NULL, '2025-08-19 10:50:01');
 
 -- ----------------------------
 -- Table structure for sensors
@@ -195,6 +367,17 @@ CREATE TABLE `sensors`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of sensors
+-- ----------------------------
+INSERT INTO `sensors` VALUES (7, 2, 1, 2, '1225070901\r\n', '7-003-54', '7-003-54', 'CGMS1002CDB0', '2025-07-05 11:00:00', NULL, NULL);
+INSERT INTO `sensors` VALUES (8, 27, 8, 3, '1225070901\r\n', '7-003-59', '7-003-59', 'CGMS10DC796C', '2025-07-15 10:00:00', '2025-07-20 10:00:00', '用户提前取下');
+INSERT INTO `sensors` VALUES (9, 1, 1, 60, '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '2025-08-19 11:04:39', NULL, NULL);
+INSERT INTO `sensors` VALUES (10, 36, 10, 74, '1225070901', '5-007-11', '5-007-11', 'CGMS10B39D13', '2025-08-19 11:19:53', '2025-08-30 00:00:00', NULL);
+INSERT INTO `sensors` VALUES (11, 36, 10, 73, '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '2025-08-19 18:17:55', NULL, NULL);
+INSERT INTO `sensors` VALUES (12, 36, 10, 71, '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '2025-08-20 09:36:28', NULL, NULL);
+INSERT INTO `sensors` VALUES (15, 26, 1, 69, '1-1', '5-007-38', '5-007-38', '12124', '2025-08-20 15:41:10', NULL, NULL);
+
+-- ----------------------------
 -- Table structure for user_permissions
 -- ----------------------------
 DROP TABLE IF EXISTS `user_permissions`;
@@ -212,6 +395,22 @@ CREATE TABLE `user_permissions`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Records of user_permissions
+-- ----------------------------
+INSERT INTO `user_permissions` VALUES (1, 2, 'BATCH_MANAGEMENT', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (2, 2, 'PERSON_MANAGEMENT', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (3, 2, 'EXPERIMENT_MANAGEMENT', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (4, 2, 'COMPETITOR_DATA', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (5, 2, 'FINGER_BLOOD_DATA', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (6, 2, 'SENSOR_DATA', 1, 0, 0);
+INSERT INTO `user_permissions` VALUES (14, 4, 'BATCH_MANAGEMENT', 1, 1, 0);
+INSERT INTO `user_permissions` VALUES (15, 4, 'PERSON_MANAGEMENT', 1, 1, 0);
+INSERT INTO `user_permissions` VALUES (16, 4, 'EXPERIMENT_MANAGEMENT', 1, 1, 0);
+INSERT INTO `user_permissions` VALUES (17, 4, 'COMPETITOR_DATA', 1, 1, 0);
+INSERT INTO `user_permissions` VALUES (18, 4, 'FINGER_BLOOD_DATA', 1, 1, 0);
+INSERT INTO `user_permissions` VALUES (19, 4, 'SENSOR_DATA', 1, 1, 0);
+
+-- ----------------------------
 -- Table structure for users
 -- ----------------------------
 DROP TABLE IF EXISTS `users`;
@@ -225,6 +424,14 @@ CREATE TABLE `users`  (
   PRIMARY KEY (`user_id`) USING BTREE,
   UNIQUE INDEX `uq_username`(`username` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of users
+-- ----------------------------
+INSERT INTO `users` VALUES (1, 'admin', '$2b$12$OrEfSmkameHVVRayq/Y4BORSYxWXbu0P8H135ZlkduYFGo3Wr8VCG', 'Admin', '2025-07-23 19:12:57', '2025-07-23 12:30:03');
+INSERT INTO `users` VALUES (2, 'test', '$2b$12$60QG7BG0S3XqhfkqkoeVM.fRylsA8plpnjA7Em2HTJc74ZYHA56Ci', 'User', '2025-07-23 11:14:45', '2025-07-23 11:14:45');
+INSERT INTO `users` VALUES (3, 'test1', '$2b$12$V7gMAszAdAi/hy0n3.Ph5eIWvErYegHNhZqpUNgz1YVEpCEn5vDiS', 'User', '2025-07-23 17:01:22', '2025-07-23 17:01:22');
+INSERT INTO `users` VALUES (4, 'test2', '$2b$12$WFWLtNoMtGGuuleu5bU0pOFVIr3WuINmDakZqOf4KeW82nVVFR5/i', 'User', '2025-07-24 11:30:49', '2025-07-24 11:30:49');
 
 -- ----------------------------
 -- Table structure for wear_records
@@ -258,6 +465,13 @@ CREATE TABLE `wear_records`  (
   CONSTRAINT `fk_wear_sensor` FOREIGN KEY (`sensor_id`) REFERENCES `sensors` (`sensor_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 42 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of wear_records
+-- ----------------------------
+INSERT INTO `wear_records` VALUES (22, 1, 2, 8, 3, '1225061701', '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '哈哈', '2025-08-15 09:15:00', '右一', '李四', '佩戴第三天数据出现频繁中断', '经检查，因用户出汗过多导致敷贴边缘翘起，传感器与皮肤接触不良');
+INSERT INTO `wear_records` VALUES (39, 1, 26, 15, 69, '2', '1-1', '5-007-38', '5-007-38', '12124', 'adada', '2025-08-20 08:09:05', '左一', 'adada', '', '');
+INSERT INTO `wear_records` VALUES (40, 1, 1, 9, 60, '4', '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '1231312412', '2025-08-20 08:30:26', '左二', '张三', '', '');
 
 -- ----------------------------
 -- Triggers structure for table persons
@@ -309,6 +523,19 @@ CREATE TRIGGER `tr_persons_update_count` AFTER UPDATE ON `persons` FOR EACH ROW 
             WHERE batch_id = NEW.batch_id;
         END IF;
     END IF;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table wear_records
+-- ----------------------------
+DROP TRIGGER IF EXISTS `tr_wear_records_delete_sensor`;
+delimiter ;;
+CREATE TRIGGER `tr_wear_records_delete_sensor` AFTER DELETE ON `wear_records` FOR EACH ROW BEGIN
+    -- 删除传感器管理表中关联的传感器记录
+    DELETE FROM `sensors` 
+    WHERE `sensor_id` = OLD.sensor_id;
 END
 ;;
 delimiter ;
