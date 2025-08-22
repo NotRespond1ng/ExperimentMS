@@ -409,7 +409,7 @@ import { ApiService } from '../services/api'
 import { usePagination } from '@/composables/usePagination'
 
 import { getBatchNumber, getPersonName, formatDateTime } from '@/utils/formatters'
-import { exportToExcel } from '@/utils/excel'
+import { exportToExcel, exportMultipleSheetsToExcel } from '@/utils/excel'
 
 // 注册ECharts组件
 use([
@@ -575,10 +575,11 @@ watch(() => batchForm.batch_id, (newBatchId, oldBatchId) => {
 
 
 
-// 过滤后的数据列表
+// 过滤后的数据列表 - 显示全部数据，只在有筛选条件时才过滤
 const filteredData = computed(() => {
   let result = dataStore.fingerBloodData
   
+  // 只有在明确设置了筛选条件时才进行过滤
   if (filterBatchId.value) {
     result = result.filter(data => data.batch_id === filterBatchId.value)
   }
@@ -612,9 +613,39 @@ watch(() => filteredData.value.length, (newTotal) => {
   total.value = newTotal
 }, { immediate: true })
 
+// 图表数据 - 默认展示最新批次下的多个人员数据，时间跨度15天
+const chartData = computed(() => {
+  let data = dataStore.fingerBloodData
+  
+  // 如果有筛选条件，使用筛选后的数据
+  if (filterBatchId.value || filterPersonId.value || (dateRange.value && dateRange.value[0] && dateRange.value[1])) {
+    data = filteredData.value
+  } else {
+    // 默认展示最新批次的数据
+    if (data.length > 0) {
+      // 找到最新的批次ID
+      const latestBatchId = Math.max(...data.map(item => item.batch_id))
+      data = data.filter(item => item.batch_id === latestBatchId)
+      
+      // 找到该批次数据的最新时间点
+      const latestTime = Math.max(...data.map(item => new Date(item.collection_time).getTime()))
+      const latestDate = new Date(latestTime)
+      
+      // 从最新时间点往前推15天
+      const fifteenDaysAgo = new Date(latestDate.getTime() - 15 * 24 * 60 * 60 * 1000)
+      data = data.filter(item => {
+        const collectionTime = new Date(item.collection_time)
+        return collectionTime >= fifteenDaysAgo && collectionTime <= latestDate
+      })
+    }
+  }
+  
+  return data.sort((a, b) => new Date(a.collection_time).getTime() - new Date(b.collection_time).getTime())
+})
+
 // 图表配置
 const chartOption = computed(() => {
-  const data = filteredData.value
+  const data = chartData.value
   
   if (data.length === 0) {
     return {
@@ -655,9 +686,26 @@ const chartOption = computed(() => {
     }
   }))
   
+  // 计算时间范围 - 确保显示完整的15天跨度
+  let minTime, maxTime
+  if (data.length > 0) {
+    const times = data.map(item => new Date(item.collection_time).getTime())
+    const dataMinTime = Math.min(...times)
+    const dataMaxTime = Math.max(...times)
+    
+    // 如果没有筛选条件，强制显示15天跨度
+    if (!filterBatchId.value && !filterPersonId.value && (!dateRange.value || (!dateRange.value[0] && !dateRange.value[1]))) {
+      maxTime = dataMaxTime
+      minTime = dataMaxTime - (15 * 24 * 60 * 60 * 1000) // 15天前
+    } else {
+      minTime = dataMinTime
+      maxTime = dataMaxTime
+    }
+  }
+  
   return {
     title: {
-      text: '血糖值变化趋势',
+      text: '血糖值变化趋势（15天跨度）',
       left: 'center',
       textStyle: {
         fontSize: 16,
@@ -693,6 +741,8 @@ const chartOption = computed(() => {
     xAxis: {
       type: 'time',
       boundaryGap: false,
+      min: minTime,
+      max: maxTime,
       axisLabel: {
         formatter: '{MM}-{dd} {HH}:{mm}'
       }
@@ -891,11 +941,47 @@ const handleExport = () => {
   try {
     exportLoading.value = true
     
-    // 准备导出数据，只包含时间和血糖值两列
-    const exportData = filteredData.value.map(item => ({
-      '时间': item.collection_time,
-      '血糖值': item.blood_glucose_value
-    }))
+    // 按人员分组数据
+    const groupedData = filteredData.value.reduce((acc, item) => {
+      // 获取纯姓名，不包含ID信息
+      const person = dataStore.persons.find(p => p.person_id === item.person_id)
+      const personName = person?.person_name || `人员${item.person_id}`
+      
+      if (!acc[personName]) {
+        acc[personName] = []
+      }
+      
+      // 解析时间并格式化
+      const dateTime = new Date(item.collection_time)
+      const year = dateTime.getFullYear()
+      const month = dateTime.getMonth() + 1
+      const day = dateTime.getDate()
+      const hours = String(dateTime.getHours()).padStart(2, '0')
+      const minutes = String(dateTime.getMinutes()).padStart(2, '0')
+      
+      // 格式化日期为 2025.8.8 格式
+      const dateStr = `${year}.${month}.${day}`
+      // 格式化时间为 15:46 格式
+      const timeStr = `${hours}:${minutes}`
+      
+      acc[personName].push({
+        '日期': dateStr,
+        '时间': timeStr,
+        '雅培': '', // 空列
+        '指尖血': item.blood_glucose_value
+      })
+      return acc
+    }, {} as Record<string, Array<{ '日期': string; '时间': string; '雅培': string; '指尖血': number }>>)
+
+    // 对每个人员的数据按时间排序（最早的在前面）
+    Object.keys(groupedData).forEach(personName => {
+      groupedData[personName].sort((a, b) => {
+        // 重新构建完整的时间字符串进行比较
+        const dateTimeA = `${a['日期'].replace(/\./g, '-')} ${a['时间']}:00`
+        const dateTimeB = `${b['日期'].replace(/\./g, '-')} ${b['时间']}:00`
+        return new Date(dateTimeA).getTime() - new Date(dateTimeB).getTime()
+      })
+    })
 
     // 生成文件名
     const filters = []
@@ -915,8 +1001,14 @@ const handleExport = () => {
       ? `指尖血数据导出_${filters.join('_')}`
       : '指尖血数据导出'
     
-    // 使用工具函数导出
-    exportToExcel(exportData, filename, '血糖数据')
+    // 准备多个sheet的数据，确保sheet名称正确
+    const sheets = Object.entries(groupedData).map(([personName, data]) => ({
+      data: data,
+      name: personName.replace(/[\\\/\[\]:*?"<>|]/g, '_') // 清理sheet名称中的非法字符
+    }))
+    
+    // 使用多sheet导出函数
+    exportMultipleSheetsToExcel(sheets, filename)
     
     ElMessage.success('导出成功')
   } catch (error) {

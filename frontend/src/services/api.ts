@@ -311,7 +311,7 @@ export class ApiService {
 
   // 指尖血数据管理
   static async getFingerBloodData(): Promise<FingerBloodData[]> {
-    const response = await api.get('/api/fingerBloodData/')
+    const response = await api.get('/api/fingerBloodData/?limit=1000')
     return response.data
   }
 
