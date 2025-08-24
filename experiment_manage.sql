@@ -3,15 +3,15 @@
 
  Source Server         : localhost_3306
  Source Server Type    : MySQL
- Source Server Version : 80034
+ Source Server Version : 80032
  Source Host           : localhost:3306
  Source Schema         : experiment_manage
 
  Target Server Type    : MySQL
- Target Server Version : 80034
+ Target Server Version : 80032
  File Encoding         : 65001
 
- Date: 20/08/2025 20:48:42
+ Date: 24/08/2025 23:32:55
 */
 
 SET NAMES utf8mb4;
@@ -31,7 +31,7 @@ CREATE TABLE `activities`  (
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   INDEX `ix_activities_activity_id`(`activity_id` ASC) USING BTREE,
   CONSTRAINT `activities_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of activities
@@ -46,6 +46,7 @@ INSERT INTO `activities` VALUES (7, 'experiment_update', '更新了实验 4', '2
 INSERT INTO `activities` VALUES (8, 'experiment_create', '创建了实验 6，批次：003，成员：王五, 李四, 张三', '2025-07-24 10:37:54', NULL);
 INSERT INTO `activities` VALUES (9, 'experiment_create', '创建了实验 7，批次：003，成员：张三, 李四, 王五', '2025-07-24 10:47:19', NULL);
 INSERT INTO `activities` VALUES (10, 'experiment_update', '更新了实验 7', '2025-07-26 06:53:34', NULL);
+INSERT INTO `activities` VALUES (11, 'experiment_create', '创建了实验 8，批次：测试批次，成员：小华, 小俊, 小明', '2025-08-22 15:14:46', NULL);
 
 -- ----------------------------
 -- Table structure for batches
@@ -58,7 +59,8 @@ CREATE TABLE `batches`  (
   `end_time` datetime NULL DEFAULT NULL COMMENT '批次结束时间',
   `person_count` int NULL DEFAULT 0 COMMENT '批次人数统计',
   PRIMARY KEY (`batch_id`) USING BTREE,
-  UNIQUE INDEX `batch_number`(`batch_number` ASC) USING BTREE
+  UNIQUE INDEX `batch_number`(`batch_number` ASC) USING BTREE,
+  INDEX `idx_batches_number`(`batch_number` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '批次管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -73,7 +75,7 @@ INSERT INTO `batches` VALUES (6, '0813', '2025-07-24 00:00:00', '2025-08-07 00:0
 INSERT INTO `batches` VALUES (7, '002', '2025-07-30 00:00:00', NULL, 0);
 INSERT INTO `batches` VALUES (8, '003', '2025-07-15 00:00:00', '2025-07-26 00:00:00', 3);
 INSERT INTO `batches` VALUES (9, '00001', '2025-08-07 16:08:58', NULL, 2);
-INSERT INTO `batches` VALUES (10, '测试批次', '2025-08-08 00:00:00', NULL, 1);
+INSERT INTO `batches` VALUES (10, '测试批次', '2025-08-08 00:00:00', NULL, 3);
 INSERT INTO `batches` VALUES (11, '99809', '2025-08-09 00:00:00', NULL, 0);
 
 -- ----------------------------
@@ -151,7 +153,7 @@ CREATE TABLE `experiment_members`  (
   INDEX `person_id`(`person_id` ASC) USING BTREE,
   CONSTRAINT `experiment_members_ibfk_1` FOREIGN KEY (`experiment_id`) REFERENCES `experiments` (`experiment_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `experiment_members_ibfk_2` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验成员关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 29 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验成员关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of experiment_members
@@ -172,6 +174,9 @@ INSERT INTO `experiment_members` VALUES (20, 6, 27, '2025-07-24 18:37:54');
 INSERT INTO `experiment_members` VALUES (24, 7, 27, '2025-07-26 14:53:34');
 INSERT INTO `experiment_members` VALUES (25, 7, 28, '2025-07-26 14:53:34');
 INSERT INTO `experiment_members` VALUES (26, 7, 29, '2025-07-26 14:53:34');
+INSERT INTO `experiment_members` VALUES (27, 8, 39, '2025-08-22 15:14:46');
+INSERT INTO `experiment_members` VALUES (28, 8, 38, '2025-08-22 15:14:46');
+INSERT INTO `experiment_members` VALUES (29, 8, 36, '2025-08-22 15:14:46');
 
 -- ----------------------------
 -- Table structure for experiments
@@ -185,7 +190,7 @@ CREATE TABLE `experiments`  (
   PRIMARY KEY (`experiment_id`) USING BTREE,
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `experiments_ibfk_1` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验管理表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '实验管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of experiments
@@ -195,6 +200,7 @@ INSERT INTO `experiments` VALUES (4, 4, '1232132412412', '2025-07-23 19:51:23');
 INSERT INTO `experiments` VALUES (5, 5, '123123123', '2025-07-23 19:51:23');
 INSERT INTO `experiments` VALUES (6, 8, '哈哈哈哈哈哈哈哈哈', '2025-07-24 10:37:54');
 INSERT INTO `experiments` VALUES (7, 8, '12312313顶顶顶顶', '2025-07-24 10:47:19');
+INSERT INTO `experiments` VALUES (8, 10, '', '2025-08-22 15:14:46');
 
 -- ----------------------------
 -- Table structure for finger_blood_files
@@ -211,7 +217,7 @@ CREATE TABLE `finger_blood_files`  (
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   CONSTRAINT `finger_blood_files_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `finger_blood_files_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '指尖血文件表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 203 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '指尖血文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of finger_blood_files
@@ -240,6 +246,171 @@ INSERT INTO `finger_blood_files` VALUES (32, 27, 8, '2025-07-23 20:00:00', 6.40)
 INSERT INTO `finger_blood_files` VALUES (33, 27, 8, '2025-07-23 21:00:00', 5.80);
 INSERT INTO `finger_blood_files` VALUES (34, 27, 8, '2025-07-23 22:00:00', 5.40);
 INSERT INTO `finger_blood_files` VALUES (35, 27, 8, '2025-07-23 23:00:00', 5.20);
+INSERT INTO `finger_blood_files` VALUES (37, 36, 10, '2025-08-08 02:01:01', 5.40);
+INSERT INTO `finger_blood_files` VALUES (38, 36, 10, '2025-08-08 02:04:01', 6.60);
+INSERT INTO `finger_blood_files` VALUES (39, 36, 10, '2025-08-08 02:07:01', 6.90);
+INSERT INTO `finger_blood_files` VALUES (40, 36, 10, '2025-08-08 02:10:01', 5.40);
+INSERT INTO `finger_blood_files` VALUES (42, 36, 10, '2025-08-09 00:49:40', 5.50);
+INSERT INTO `finger_blood_files` VALUES (43, 36, 10, '2025-08-09 02:48:01', 10.50);
+INSERT INTO `finger_blood_files` VALUES (44, 36, 10, '2025-08-09 06:15:53', 3.90);
+INSERT INTO `finger_blood_files` VALUES (45, 36, 10, '2025-08-09 10:30:05', 14.90);
+INSERT INTO `finger_blood_files` VALUES (46, 36, 10, '2025-08-09 11:27:35', 10.30);
+INSERT INTO `finger_blood_files` VALUES (47, 36, 10, '2025-08-09 16:13:12', 6.00);
+INSERT INTO `finger_blood_files` VALUES (48, 36, 10, '2025-08-09 19:53:01', 8.70);
+INSERT INTO `finger_blood_files` VALUES (49, 36, 10, '2025-08-09 21:05:20', 8.00);
+INSERT INTO `finger_blood_files` VALUES (50, 36, 10, '2025-08-10 01:44:08', 6.10);
+INSERT INTO `finger_blood_files` VALUES (51, 36, 10, '2025-08-10 06:41:59', 6.60);
+INSERT INTO `finger_blood_files` VALUES (52, 36, 10, '2025-08-10 11:17:47', 13.70);
+INSERT INTO `finger_blood_files` VALUES (53, 36, 10, '2025-08-10 11:34:33', 12.00);
+INSERT INTO `finger_blood_files` VALUES (54, 36, 10, '2025-08-10 15:28:07', 3.70);
+INSERT INTO `finger_blood_files` VALUES (55, 36, 10, '2025-08-10 19:10:29', 6.70);
+INSERT INTO `finger_blood_files` VALUES (56, 36, 10, '2025-08-10 21:30:46', 14.40);
+INSERT INTO `finger_blood_files` VALUES (57, 36, 10, '2025-08-10 23:03:34', 8.00);
+INSERT INTO `finger_blood_files` VALUES (58, 36, 10, '2025-08-11 01:28:33', 8.70);
+INSERT INTO `finger_blood_files` VALUES (59, 36, 10, '2025-08-11 01:38:57', 3.30);
+INSERT INTO `finger_blood_files` VALUES (60, 36, 10, '2025-08-11 06:35:41', 6.40);
+INSERT INTO `finger_blood_files` VALUES (61, 36, 10, '2025-08-11 10:19:30', 10.50);
+INSERT INTO `finger_blood_files` VALUES (62, 36, 10, '2025-08-11 11:35:30', 5.70);
+INSERT INTO `finger_blood_files` VALUES (63, 36, 10, '2025-08-11 16:37:46', 7.60);
+INSERT INTO `finger_blood_files` VALUES (64, 36, 10, '2025-08-11 23:03:43', 7.80);
+INSERT INTO `finger_blood_files` VALUES (65, 36, 10, '2025-08-11 23:35:54', 6.20);
+INSERT INTO `finger_blood_files` VALUES (66, 36, 10, '2025-08-12 04:04:40', 12.00);
+INSERT INTO `finger_blood_files` VALUES (67, 36, 10, '2025-08-12 10:02:22', 3.30);
+INSERT INTO `finger_blood_files` VALUES (68, 36, 10, '2025-08-12 10:57:45', 10.00);
+INSERT INTO `finger_blood_files` VALUES (69, 36, 10, '2025-08-12 11:11:30', 7.00);
+INSERT INTO `finger_blood_files` VALUES (70, 36, 10, '2025-08-12 12:32:55', 14.90);
+INSERT INTO `finger_blood_files` VALUES (71, 36, 10, '2025-08-12 13:24:31', 14.60);
+INSERT INTO `finger_blood_files` VALUES (72, 36, 10, '2025-08-12 19:49:15', 12.80);
+INSERT INTO `finger_blood_files` VALUES (73, 36, 10, '2025-08-12 19:55:32', 4.50);
+INSERT INTO `finger_blood_files` VALUES (74, 36, 10, '2025-08-13 07:21:41', 5.20);
+INSERT INTO `finger_blood_files` VALUES (75, 36, 10, '2025-08-13 08:55:25', 14.10);
+INSERT INTO `finger_blood_files` VALUES (76, 36, 10, '2025-08-13 11:04:50', 7.60);
+INSERT INTO `finger_blood_files` VALUES (77, 36, 10, '2025-08-13 13:52:50', 5.70);
+INSERT INTO `finger_blood_files` VALUES (78, 36, 10, '2025-08-13 15:17:27', 3.50);
+INSERT INTO `finger_blood_files` VALUES (79, 36, 10, '2025-08-13 18:20:15', 7.10);
+INSERT INTO `finger_blood_files` VALUES (80, 36, 10, '2025-08-13 22:06:54', 8.90);
+INSERT INTO `finger_blood_files` VALUES (81, 36, 10, '2025-08-13 22:56:39', 3.20);
+INSERT INTO `finger_blood_files` VALUES (82, 36, 10, '2025-08-14 04:06:20', 5.40);
+INSERT INTO `finger_blood_files` VALUES (83, 36, 10, '2025-08-14 08:19:20', 4.20);
+INSERT INTO `finger_blood_files` VALUES (84, 36, 10, '2025-08-14 09:04:57', 7.40);
+INSERT INTO `finger_blood_files` VALUES (85, 36, 10, '2025-08-14 11:41:53', 11.10);
+INSERT INTO `finger_blood_files` VALUES (86, 36, 10, '2025-08-14 15:16:19', 4.80);
+INSERT INTO `finger_blood_files` VALUES (87, 36, 10, '2025-08-14 16:07:29', 8.40);
+INSERT INTO `finger_blood_files` VALUES (88, 36, 10, '2025-08-14 19:47:20', 4.80);
+INSERT INTO `finger_blood_files` VALUES (89, 36, 10, '2025-08-14 23:11:33', 13.80);
+INSERT INTO `finger_blood_files` VALUES (90, 36, 10, '2025-08-15 01:45:36', 12.00);
+INSERT INTO `finger_blood_files` VALUES (91, 36, 10, '2025-08-15 05:08:30', 13.90);
+INSERT INTO `finger_blood_files` VALUES (92, 36, 10, '2025-08-15 07:46:05', 13.10);
+INSERT INTO `finger_blood_files` VALUES (93, 36, 10, '2025-08-15 18:41:55', 5.00);
+INSERT INTO `finger_blood_files` VALUES (94, 36, 10, '2025-08-15 19:35:22', 11.00);
+INSERT INTO `finger_blood_files` VALUES (95, 36, 10, '2025-08-15 23:22:13', 5.10);
+INSERT INTO `finger_blood_files` VALUES (96, 36, 10, '2025-08-15 23:25:44', 4.80);
+INSERT INTO `finger_blood_files` VALUES (97, 36, 10, '2025-08-15 23:47:56', 6.20);
+INSERT INTO `finger_blood_files` VALUES (98, 36, 10, '2025-08-16 04:00:29', 11.40);
+INSERT INTO `finger_blood_files` VALUES (99, 36, 10, '2025-08-16 10:25:07', 4.90);
+INSERT INTO `finger_blood_files` VALUES (100, 36, 10, '2025-08-16 14:02:28', 11.30);
+INSERT INTO `finger_blood_files` VALUES (101, 36, 10, '2025-08-16 16:25:00', 5.10);
+INSERT INTO `finger_blood_files` VALUES (102, 36, 10, '2025-08-16 17:52:44', 7.20);
+INSERT INTO `finger_blood_files` VALUES (103, 36, 10, '2025-08-16 17:54:12', 5.80);
+INSERT INTO `finger_blood_files` VALUES (104, 36, 10, '2025-08-16 18:49:42', 4.20);
+INSERT INTO `finger_blood_files` VALUES (105, 36, 10, '2025-08-16 18:54:24', 7.90);
+INSERT INTO `finger_blood_files` VALUES (106, 36, 10, '2025-08-17 04:08:35', 14.90);
+INSERT INTO `finger_blood_files` VALUES (107, 36, 10, '2025-08-17 07:37:51', 14.00);
+INSERT INTO `finger_blood_files` VALUES (108, 36, 10, '2025-08-17 08:20:01', 4.50);
+INSERT INTO `finger_blood_files` VALUES (109, 36, 10, '2025-08-17 10:30:38', 11.00);
+INSERT INTO `finger_blood_files` VALUES (110, 36, 10, '2025-08-17 10:54:15', 12.20);
+INSERT INTO `finger_blood_files` VALUES (111, 36, 10, '2025-08-17 14:22:39', 3.50);
+INSERT INTO `finger_blood_files` VALUES (112, 36, 10, '2025-08-17 17:23:39', 10.00);
+INSERT INTO `finger_blood_files` VALUES (113, 36, 10, '2025-08-17 21:29:33', 11.20);
+INSERT INTO `finger_blood_files` VALUES (114, 36, 10, '2025-08-18 01:52:00', 4.90);
+INSERT INTO `finger_blood_files` VALUES (115, 36, 10, '2025-08-18 03:25:39', 8.20);
+INSERT INTO `finger_blood_files` VALUES (116, 36, 10, '2025-08-18 08:03:46', 14.80);
+INSERT INTO `finger_blood_files` VALUES (117, 36, 10, '2025-08-18 08:44:57', 13.60);
+INSERT INTO `finger_blood_files` VALUES (118, 36, 10, '2025-08-18 08:46:14', 10.80);
+INSERT INTO `finger_blood_files` VALUES (119, 36, 10, '2025-08-18 11:26:47', 6.50);
+INSERT INTO `finger_blood_files` VALUES (120, 36, 10, '2025-08-18 15:22:30', 14.30);
+INSERT INTO `finger_blood_files` VALUES (121, 36, 10, '2025-08-18 22:39:41', 8.40);
+INSERT INTO `finger_blood_files` VALUES (122, 39, 10, '2025-08-08 00:00:00', 6.30);
+INSERT INTO `finger_blood_files` VALUES (123, 39, 10, '2025-08-09 00:48:44', 12.70);
+INSERT INTO `finger_blood_files` VALUES (124, 39, 10, '2025-08-09 06:11:13', 12.40);
+INSERT INTO `finger_blood_files` VALUES (125, 39, 10, '2025-08-09 07:23:06', 6.30);
+INSERT INTO `finger_blood_files` VALUES (126, 39, 10, '2025-08-09 10:34:05', 7.40);
+INSERT INTO `finger_blood_files` VALUES (127, 39, 10, '2025-08-09 12:11:51', 13.50);
+INSERT INTO `finger_blood_files` VALUES (128, 39, 10, '2025-08-09 20:12:49', 11.80);
+INSERT INTO `finger_blood_files` VALUES (129, 39, 10, '2025-08-09 23:28:12', 4.30);
+INSERT INTO `finger_blood_files` VALUES (130, 39, 10, '2025-08-09 23:42:14', 5.60);
+INSERT INTO `finger_blood_files` VALUES (131, 39, 10, '2025-08-10 02:04:48', 12.90);
+INSERT INTO `finger_blood_files` VALUES (132, 39, 10, '2025-08-10 03:14:00', 12.10);
+INSERT INTO `finger_blood_files` VALUES (133, 39, 10, '2025-08-10 03:56:47', 4.20);
+INSERT INTO `finger_blood_files` VALUES (134, 39, 10, '2025-08-10 04:08:01', 5.60);
+INSERT INTO `finger_blood_files` VALUES (135, 39, 10, '2025-08-10 04:54:07', 12.20);
+INSERT INTO `finger_blood_files` VALUES (136, 39, 10, '2025-08-10 12:09:44', 6.30);
+INSERT INTO `finger_blood_files` VALUES (137, 39, 10, '2025-08-10 16:31:00', 8.40);
+INSERT INTO `finger_blood_files` VALUES (138, 39, 10, '2025-08-10 21:31:08', 9.30);
+INSERT INTO `finger_blood_files` VALUES (139, 39, 10, '2025-08-11 01:56:31', 7.60);
+INSERT INTO `finger_blood_files` VALUES (140, 39, 10, '2025-08-11 10:55:37', 14.20);
+INSERT INTO `finger_blood_files` VALUES (141, 39, 10, '2025-08-11 11:07:32', 3.10);
+INSERT INTO `finger_blood_files` VALUES (142, 39, 10, '2025-08-11 15:31:55', 10.00);
+INSERT INTO `finger_blood_files` VALUES (143, 39, 10, '2025-08-11 17:12:43', 3.20);
+INSERT INTO `finger_blood_files` VALUES (144, 39, 10, '2025-08-11 19:57:20', 9.30);
+INSERT INTO `finger_blood_files` VALUES (145, 39, 10, '2025-08-11 20:39:32', 7.80);
+INSERT INTO `finger_blood_files` VALUES (146, 39, 10, '2025-08-11 21:19:34', 12.60);
+INSERT INTO `finger_blood_files` VALUES (147, 39, 10, '2025-08-12 01:37:33', 12.40);
+INSERT INTO `finger_blood_files` VALUES (148, 39, 10, '2025-08-12 04:02:00', 4.20);
+INSERT INTO `finger_blood_files` VALUES (149, 39, 10, '2025-08-12 04:13:29', 6.70);
+INSERT INTO `finger_blood_files` VALUES (150, 39, 10, '2025-08-12 05:44:01', 4.70);
+INSERT INTO `finger_blood_files` VALUES (151, 39, 10, '2025-08-12 11:56:55', 7.30);
+INSERT INTO `finger_blood_files` VALUES (152, 39, 10, '2025-08-12 16:05:52', 8.00);
+INSERT INTO `finger_blood_files` VALUES (153, 39, 10, '2025-08-12 17:50:40', 14.30);
+INSERT INTO `finger_blood_files` VALUES (154, 39, 10, '2025-08-12 22:14:37', 4.60);
+INSERT INTO `finger_blood_files` VALUES (155, 39, 10, '2025-08-13 00:26:48', 11.70);
+INSERT INTO `finger_blood_files` VALUES (156, 39, 10, '2025-08-13 04:18:43', 11.90);
+INSERT INTO `finger_blood_files` VALUES (157, 39, 10, '2025-08-13 05:28:08', 10.00);
+INSERT INTO `finger_blood_files` VALUES (158, 39, 10, '2025-08-13 07:43:16', 10.00);
+INSERT INTO `finger_blood_files` VALUES (159, 39, 10, '2025-08-13 11:09:23', 3.20);
+INSERT INTO `finger_blood_files` VALUES (160, 39, 10, '2025-08-13 13:51:24', 13.80);
+INSERT INTO `finger_blood_files` VALUES (161, 39, 10, '2025-08-13 19:10:00', 7.10);
+INSERT INTO `finger_blood_files` VALUES (162, 39, 10, '2025-08-13 20:44:02', 10.90);
+INSERT INTO `finger_blood_files` VALUES (163, 39, 10, '2025-08-14 06:00:10', 14.60);
+INSERT INTO `finger_blood_files` VALUES (164, 39, 10, '2025-08-14 13:26:30', 4.30);
+INSERT INTO `finger_blood_files` VALUES (165, 39, 10, '2025-08-14 16:03:12', 11.20);
+INSERT INTO `finger_blood_files` VALUES (166, 39, 10, '2025-08-14 16:53:02', 8.20);
+INSERT INTO `finger_blood_files` VALUES (167, 39, 10, '2025-08-14 17:34:01', 5.80);
+INSERT INTO `finger_blood_files` VALUES (168, 39, 10, '2025-08-14 18:08:36', 8.30);
+INSERT INTO `finger_blood_files` VALUES (169, 39, 10, '2025-08-14 19:34:28', 7.20);
+INSERT INTO `finger_blood_files` VALUES (170, 39, 10, '2025-08-14 22:59:12', 7.40);
+INSERT INTO `finger_blood_files` VALUES (171, 39, 10, '2025-08-15 01:46:01', 5.60);
+INSERT INTO `finger_blood_files` VALUES (172, 39, 10, '2025-08-15 03:17:14', 10.70);
+INSERT INTO `finger_blood_files` VALUES (173, 39, 10, '2025-08-15 04:03:30', 6.30);
+INSERT INTO `finger_blood_files` VALUES (174, 39, 10, '2025-08-15 06:49:43', 12.10);
+INSERT INTO `finger_blood_files` VALUES (175, 39, 10, '2025-08-15 14:51:55', 7.70);
+INSERT INTO `finger_blood_files` VALUES (176, 39, 10, '2025-08-15 15:12:30', 5.20);
+INSERT INTO `finger_blood_files` VALUES (177, 39, 10, '2025-08-15 20:38:29', 10.00);
+INSERT INTO `finger_blood_files` VALUES (178, 39, 10, '2025-08-15 22:59:27', 14.40);
+INSERT INTO `finger_blood_files` VALUES (179, 39, 10, '2025-08-16 00:13:34', 6.50);
+INSERT INTO `finger_blood_files` VALUES (180, 39, 10, '2025-08-16 09:02:04', 13.60);
+INSERT INTO `finger_blood_files` VALUES (181, 39, 10, '2025-08-16 09:27:49', 11.40);
+INSERT INTO `finger_blood_files` VALUES (182, 39, 10, '2025-08-16 10:36:34', 3.20);
+INSERT INTO `finger_blood_files` VALUES (183, 39, 10, '2025-08-16 14:49:40', 9.20);
+INSERT INTO `finger_blood_files` VALUES (184, 39, 10, '2025-08-16 16:41:02', 8.20);
+INSERT INTO `finger_blood_files` VALUES (185, 39, 10, '2025-08-16 17:10:32', 10.20);
+INSERT INTO `finger_blood_files` VALUES (186, 39, 10, '2025-08-16 20:41:48', 9.80);
+INSERT INTO `finger_blood_files` VALUES (187, 39, 10, '2025-08-17 00:09:44', 10.40);
+INSERT INTO `finger_blood_files` VALUES (188, 39, 10, '2025-08-17 09:52:59', 13.00);
+INSERT INTO `finger_blood_files` VALUES (189, 39, 10, '2025-08-17 10:14:22', 10.20);
+INSERT INTO `finger_blood_files` VALUES (190, 39, 10, '2025-08-17 11:53:23', 8.00);
+INSERT INTO `finger_blood_files` VALUES (191, 39, 10, '2025-08-17 16:39:57', 5.20);
+INSERT INTO `finger_blood_files` VALUES (192, 39, 10, '2025-08-17 21:43:59', 12.50);
+INSERT INTO `finger_blood_files` VALUES (193, 39, 10, '2025-08-17 22:52:39', 3.50);
+INSERT INTO `finger_blood_files` VALUES (194, 39, 10, '2025-08-17 23:39:45', 9.30);
+INSERT INTO `finger_blood_files` VALUES (195, 39, 10, '2025-08-18 02:33:44', 5.60);
+INSERT INTO `finger_blood_files` VALUES (196, 39, 10, '2025-08-18 03:29:52', 8.20);
+INSERT INTO `finger_blood_files` VALUES (197, 39, 10, '2025-08-18 05:39:47', 7.20);
+INSERT INTO `finger_blood_files` VALUES (198, 39, 10, '2025-08-18 10:11:52', 5.90);
+INSERT INTO `finger_blood_files` VALUES (199, 39, 10, '2025-08-18 14:05:51', 14.80);
+INSERT INTO `finger_blood_files` VALUES (200, 39, 10, '2025-08-18 19:34:30', 10.70);
+INSERT INTO `finger_blood_files` VALUES (201, 39, 10, '2025-08-18 20:33:47', 10.10);
+INSERT INTO `finger_blood_files` VALUES (202, 39, 10, '2025-08-18 21:45:42', 13.50);
 
 -- ----------------------------
 -- Table structure for persons
@@ -253,8 +424,10 @@ CREATE TABLE `persons`  (
   `batch_id` int NULL DEFAULT NULL COMMENT '关联的批次ID',
   PRIMARY KEY (`person_id`) USING BTREE,
   INDEX `fk_persons_batch`(`batch_id` ASC) USING BTREE,
+  INDEX `idx_persons_batch_id`(`batch_id` ASC) USING BTREE,
+  INDEX `idx_persons_name`(`person_name` ASC) USING BTREE,
   CONSTRAINT `fk_persons_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员管理表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 40 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of persons
@@ -295,6 +468,8 @@ INSERT INTO `persons` VALUES (33, '测试人员', 'Male', 25, 1);
 INSERT INTO `persons` VALUES (34, '123123', NULL, NULL, 9);
 INSERT INTO `persons` VALUES (35, '24444', NULL, NULL, 9);
 INSERT INTO `persons` VALUES (36, '小明', 'Female', 34, 10);
+INSERT INTO `persons` VALUES (38, '小俊', 'Male', 25, 10);
+INSERT INTO `persons` VALUES (39, '小华', 'Male', 23, 10);
 
 -- ----------------------------
 -- Table structure for sensor_details
@@ -316,8 +491,10 @@ CREATE TABLE `sensor_details`  (
   `created_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   PRIMARY KEY (`sensor_detail_id`) USING BTREE,
   UNIQUE INDEX `uk_test_number`(`test_number` ASC) USING BTREE,
-  UNIQUE INDEX `uk_probe_number`(`probe_number` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 75 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器详细信息表' ROW_FORMAT = DYNAMIC;
+  UNIQUE INDEX `uk_probe_number`(`probe_number` ASC) USING BTREE,
+  INDEX `idx_sensor_details_test_number`(`test_number` ASC) USING BTREE,
+  INDEX `idx_sensor_details_probe_number`(`probe_number` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 76 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器详细信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sensor_details
@@ -340,6 +517,7 @@ INSERT INTO `sensor_details` VALUES (71, '2025-06-27', '5-007-42', 'A061806', 0.
 INSERT INTO `sensor_details` VALUES (72, '2025-06-27', '5-007-39', 'A061803', 0.0000, 4.3200, 10.2400, 38.1600, 1.8200000000, 0.9954270000, NULL, NULL, '2025-08-19 10:50:01');
 INSERT INTO `sensor_details` VALUES (73, '2025-06-27', '5-007-09', 'D061703', 0.0000, 4.3100, 10.2600, 38.9800, 1.8700000000, 0.9957770000, NULL, NULL, '2025-08-19 10:50:01');
 INSERT INTO `sensor_details` VALUES (74, '2025-06-27', '5-007-11', 'D061705', 0.0000, 4.3600, 10.3300, 38.4900, 1.8400000000, 0.9954180000, '测试', NULL, '2025-08-19 10:50:01');
+INSERT INTO `sensor_details` VALUES (75, '2025-08-21', '5-007-88', '	 D061777', 3.0000, 4.0000, 5.0000, 6.0000, 45.0000000000, 1.0000000000, '', '测试一下添加', '2025-08-21 11:36:58');
 
 -- ----------------------------
 -- Table structure for sensors
@@ -354,28 +532,31 @@ CREATE TABLE `sensors`  (
   `sensor_batch` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器批次 (与传感器号值相同)',
   `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器号 (与传感器批次值相同)',
   `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 发射器号',
-  `start_time` datetime NOT NULL COMMENT '传感器开始使用时间',
-  `end_time` datetime NULL DEFAULT NULL COMMENT '传感器结束使用时间',
+  `start_time` date NULL DEFAULT 'curdate()' COMMENT '佩戴记录创建时间',
+  `end_time` date NULL DEFAULT NULL COMMENT '佩戴结束时间',
   `end_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器结束使用原因（可选）',
   PRIMARY KEY (`sensor_id`) USING BTREE,
   INDEX `person_id`(`person_id` ASC) USING BTREE,
   INDEX `batch_id`(`batch_id` ASC) USING BTREE,
   INDEX `fk_sensor_detail`(`sensor_detail_id` ASC) USING BTREE,
+  INDEX `idx_sensors_batch_id`(`batch_id` ASC) USING BTREE,
+  INDEX `idx_sensors_person_id`(`person_id` ASC) USING BTREE,
+  INDEX `idx_sensors_detail_id`(`sensor_detail_id` ASC) USING BTREE,
   CONSTRAINT `fk_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `sensors_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `sensors_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器管理表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '传感器管理表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sensors
 -- ----------------------------
-INSERT INTO `sensors` VALUES (7, 2, 1, 2, '1225070901\r\n', '7-003-54', '7-003-54', 'CGMS1002CDB0', '2025-07-05 11:00:00', NULL, NULL);
-INSERT INTO `sensors` VALUES (8, 27, 8, 3, '1225070901\r\n', '7-003-59', '7-003-59', 'CGMS10DC796C', '2025-07-15 10:00:00', '2025-07-20 10:00:00', '用户提前取下');
-INSERT INTO `sensors` VALUES (9, 1, 1, 60, '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '2025-08-19 11:04:39', NULL, NULL);
-INSERT INTO `sensors` VALUES (10, 36, 10, 74, '1225070901', '5-007-11', '5-007-11', 'CGMS10B39D13', '2025-08-19 11:19:53', '2025-08-30 00:00:00', NULL);
-INSERT INTO `sensors` VALUES (11, 36, 10, 73, '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '2025-08-19 18:17:55', NULL, NULL);
-INSERT INTO `sensors` VALUES (12, 36, 10, 71, '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '2025-08-20 09:36:28', NULL, NULL);
-INSERT INTO `sensors` VALUES (15, 26, 1, 69, '1-1', '5-007-38', '5-007-38', '12124', '2025-08-20 15:41:10', NULL, NULL);
+INSERT INTO `sensors` VALUES (7, 2, 1, 2, '1225070901\r\n', '7-003-54', '7-003-54', 'CGMS1002CDB0', '2025-07-05', NULL, NULL);
+INSERT INTO `sensors` VALUES (11, 36, 10, 73, '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '2025-08-19', '2025-08-22', '');
+INSERT INTO `sensors` VALUES (12, 36, 10, 71, '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '2025-08-20', '2025-08-24', '');
+INSERT INTO `sensors` VALUES (15, 26, 1, 69, '1-1', '5-007-38', '5-007-38', '12124', '2025-08-20', NULL, NULL);
+INSERT INTO `sensors` VALUES (16, 2, 1, 75, '467365765', '5-007-88', '5-007-88', 'CGM5458967', '2025-08-21', NULL, NULL);
+INSERT INTO `sensors` VALUES (23, 36, 10, 1, '6457656', '7-003-49', '7-003-49', 'CGM6868787', '2025-08-08', '2025-08-26', '');
+INSERT INTO `sensors` VALUES (24, 36, 10, 3, '787676', '7-003-59', '7-003-59', 'CGM775878897', '2025-08-08', '2025-08-26', '');
 
 -- ----------------------------
 -- Table structure for user_permissions
@@ -449,7 +630,8 @@ CREATE TABLE `wear_records`  (
   `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器号',
   `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发射器号',
   `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名称',
-  `wear_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '佩戴记录创建时间',
+  `wear_time` date NULL DEFAULT 'curdate()' COMMENT '佩戴记录创建时间',
+  `wear_end_time` date NULL DEFAULT NULL COMMENT '佩戴结束时间',
   `wear_position` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名称',
   `abnormal_situation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '新增: 记录发生的异常情况',
@@ -460,18 +642,27 @@ CREATE TABLE `wear_records`  (
   INDEX `fk_wear_person`(`person_id` ASC) USING BTREE,
   INDEX `fk_wear_sensor`(`sensor_id` ASC) USING BTREE,
   INDEX `fk_wear_sensor_detail`(`sensor_detail_id` ASC) USING BTREE,
+  INDEX `idx_wear_records_batch_id`(`batch_id` ASC) USING BTREE,
+  INDEX `idx_wear_records_person_id`(`person_id` ASC) USING BTREE,
+  INDEX `idx_wear_records_sensor_id`(`sensor_id` ASC) USING BTREE,
+  INDEX `idx_wear_records_wear_time`(`wear_time` ASC) USING BTREE,
+  INDEX `idx_wear_records_batch_person`(`batch_id` ASC, `person_id` ASC) USING BTREE,
   CONSTRAINT `fk_wear_batch` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_person` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_sensor` FOREIGN KEY (`sensor_id`) REFERENCES `sensors` (`sensor_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_wear_sensor_detail` FOREIGN KEY (`sensor_detail_id`) REFERENCES `sensor_details` (`sensor_detail_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 42 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 54 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人员传感器佩戴记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of wear_records
 -- ----------------------------
-INSERT INTO `wear_records` VALUES (22, 1, 2, 8, 3, '1225061701', '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '哈哈', '2025-08-15 09:15:00', '右一', '李四', '佩戴第三天数据出现频繁中断', '经检查，因用户出汗过多导致敷贴边缘翘起，传感器与皮肤接触不良');
-INSERT INTO `wear_records` VALUES (39, 1, 26, 15, 69, '2', '1-1', '5-007-38', '5-007-38', '12124', 'adada', '2025-08-20 08:09:05', '左一', 'adada', '', '');
-INSERT INTO `wear_records` VALUES (40, 1, 1, 9, 60, '4', '1225070901', '7-003-69', '7-003-69', 'CGMS104A725C', '1231312412', '2025-08-20 08:30:26', '左二', '张三', '', '');
+INSERT INTO `wear_records` VALUES (39, 1, 26, 15, 69, '2', '1-1', '5-007-38', '5-007-38', '12124', 'adada', '2025-08-20', NULL, '左一', 'adada', '', '');
+INSERT INTO `wear_records` VALUES (42, 10, 36, 12, 71, '测试一下', '1225070901', '5-007-42', '5-007-42', 'CGMS1002CDB0', '0068', '2025-08-21', '2025-08-24', '左一', '小明', '', '');
+INSERT INTO `wear_records` VALUES (43, 10, 36, 11, 73, '测试哈', '1225070901', '5-007-09', '5-007-09', 'CGMS10B57696', '0069', '2025-08-21', '2025-08-22', '左二', '小明', '', '');
+INSERT INTO `wear_records` VALUES (45, 1, 2, 7, 2, '', '1225070901\r\n', '7-003-54', '7-003-54', 'CGMS1002CDB0', '李四', '2025-08-21', NULL, '左一', '李四', '', '');
+INSERT INTO `wear_records` VALUES (46, 1, 2, 16, 75, '4463463', '467365765', '5-007-88', '5-007-88', 'CGM5458967', '0098', '2025-08-21', NULL, '左二', '李四', '', '');
+INSERT INTO `wear_records` VALUES (52, 10, 36, 23, 1, '67676767', '6457656', '7-003-49', '7-003-49', 'CGM6868787', '0078', '2025-08-08', '2025-08-26', '右一', '小明', '', '');
+INSERT INTO `wear_records` VALUES (53, 10, 36, 24, 3, '6778746567', '787676', '7-003-59', '7-003-59', 'CGM775878897', '0069', '2025-08-08', '2025-08-26', '右二', '小明', '', '');
 
 -- ----------------------------
 -- Triggers structure for table persons
@@ -483,21 +674,6 @@ CREATE TRIGGER `tr_persons_insert_count` AFTER INSERT ON `persons` FOR EACH ROW 
         UPDATE batches
         SET person_count = person_count + 1
         WHERE batch_id = NEW.batch_id;
-    END IF;
-END
-;;
-delimiter ;
-
--- ----------------------------
--- Triggers structure for table persons
--- ----------------------------
-DROP TRIGGER IF EXISTS `tr_persons_delete_count`;
-delimiter ;;
-CREATE TRIGGER `tr_persons_delete_count` AFTER DELETE ON `persons` FOR EACH ROW BEGIN
-    IF OLD.batch_id IS NOT NULL THEN
-        UPDATE batches
-        SET person_count = person_count - 1
-        WHERE batch_id = OLD.batch_id;
     END IF;
 END
 ;;
@@ -522,6 +698,21 @@ CREATE TRIGGER `tr_persons_update_count` AFTER UPDATE ON `persons` FOR EACH ROW 
             SET person_count = person_count + 1
             WHERE batch_id = NEW.batch_id;
         END IF;
+    END IF;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table persons
+-- ----------------------------
+DROP TRIGGER IF EXISTS `tr_persons_delete_count`;
+delimiter ;;
+CREATE TRIGGER `tr_persons_delete_count` AFTER DELETE ON `persons` FOR EACH ROW BEGIN
+    IF OLD.batch_id IS NOT NULL THEN
+        UPDATE batches
+        SET person_count = person_count - 1
+        WHERE batch_id = OLD.batch_id;
     END IF;
 END
 ;;
