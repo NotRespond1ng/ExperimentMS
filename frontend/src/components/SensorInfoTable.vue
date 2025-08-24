@@ -65,8 +65,8 @@
             <span class="field-value">{{ formatSimpleDate(sensor.wear_time) }}</span>
           </div>
           <div class="sensor-col sensor-col-time">
-            <span class="field-value" :class="sensor.wear_end_time ? 'wear-end-time' : 'time-not-ended'">
-              {{ sensor.wear_end_time ? formatSimpleDate(sensor.wear_end_time) : '进行中' }}
+            <span class="field-value" :class="sensor.wear_end_time && sensor.wear_end_time.trim() !== '' ? 'wear-end-time' : 'time-not-ended'">
+              {{ sensor.wear_end_time && sensor.wear_end_time.trim() !== '' ? formatSimpleDate(sensor.wear_end_time) : '进行中' }}
             </span>
           </div>
           <div class="sensor-col sensor-col-test-params">
@@ -204,9 +204,7 @@ const formatSimpleDate = (date: string | Date | null | undefined): string => {
     return dateObj.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit'
     })
   } catch {
     return '-'

@@ -88,6 +88,7 @@ def get_wear_records(
             "abnormal_situation": record.abnormal_situation,
             "cause_analysis": record.cause_analysis,
             "wear_time": record.wear_time,
+            "wear_end_time": record.wear_end_time,
             "person_name": record.person.person_name if record.person else None,
             "batch_number": record.batch.batch_number if record.batch else None,
             "test_number": record.sensor.sensor_detail.test_number if record.sensor and record.sensor.sensor_detail else None,
@@ -136,10 +137,10 @@ def create_wear_record(
     if existing_position_record:
         raise HTTPException(status_code=400, detail=f"该人员已在{wear_record.wear_position}位置佩戴其他传感器设备")
     
-    # 创建佩戴记录，如果没有提供wear_time则使用当前时间
+    # 创建佩戴记录，如果没有提供wear_time则使用当前日期
     wear_record_data = wear_record.dict()
     if wear_record_data.get('wear_time') is None:
-        wear_record_data['wear_time'] = datetime.now()
+        wear_record_data['wear_time'] = datetime.now().date()
     
     # 设置nickname字段（从wear_record获取）
     wear_record_data['nickname'] = wear_record.nickname if hasattr(wear_record, 'nickname') and wear_record.nickname else person.person_name
@@ -190,6 +191,7 @@ def create_wear_record(
         abnormal_situation=db_wear_record.abnormal_situation,
         cause_analysis=db_wear_record.cause_analysis,
         wear_time=db_wear_record.wear_time,
+        wear_end_time=db_wear_record.wear_end_time,
         person_name=person.person_name,
         batch_number=batch.batch_number,
         test_number=sensor.sensor_detail.test_number if sensor.sensor_detail else None,
@@ -253,6 +255,7 @@ def get_wear_record(
         abnormal_situation=wear_record.abnormal_situation,
         cause_analysis=wear_record.cause_analysis,
         wear_time=wear_record.wear_time,
+        wear_end_time=wear_record.wear_end_time,
         person_name=wear_record.person.person_name if wear_record.person else None,
         batch_number=wear_record.batch.batch_number if wear_record.batch else None,
         test_number=wear_record.sensor.sensor_detail.test_number if wear_record.sensor and wear_record.sensor.sensor_detail else None,
@@ -327,6 +330,26 @@ def update_wear_record(
     else:
         db_wear_record.sensor_detail_id = None
     
+    # 同步更新传感器表中的相关字段
+    if hasattr(wear_record, 'wear_end_time') and wear_record.wear_end_time is not None:
+        # 如果设置了佩戴结束时间，同步更新传感器的end_time
+        from datetime import datetime
+        if isinstance(wear_record.wear_end_time, str):
+            # 如果是字符串格式的日期，转换为datetime
+            try:
+                end_datetime = datetime.strptime(wear_record.wear_end_time, '%Y-%m-%d')
+                sensor.end_time = end_datetime
+            except ValueError:
+                # 如果日期格式不正确，使用当前时间
+                sensor.end_time = datetime.now()
+        else:
+            # 如果是date对象，转换为datetime
+            sensor.end_time = datetime.combine(wear_record.wear_end_time, datetime.min.time())
+    
+    # 同步更新传感器的结束原因
+    if hasattr(wear_record, 'cause_analysis'):
+        sensor.end_reason = wear_record.cause_analysis
+    
     db.commit()
     db.refresh(db_wear_record)
     
@@ -360,9 +383,12 @@ def update_wear_record(
         sensor_number=db_wear_record.sensor_number,
         transmitter_id=db_wear_record.transmitter_id,
         wear_position=db_wear_record.wear_position,
+        nickname=db_wear_record.nickname,
+        user_name=db_wear_record.user_name,
         abnormal_situation=db_wear_record.abnormal_situation,
         cause_analysis=db_wear_record.cause_analysis,
         wear_time=db_wear_record.wear_time,
+        wear_end_time=db_wear_record.wear_end_time,
         person_name=person.person_name,
         batch_number=batch.batch_number,
         test_number=sensor.sensor_detail.test_number if sensor.sensor_detail else None,

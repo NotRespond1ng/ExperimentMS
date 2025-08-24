@@ -148,8 +148,8 @@ class SensorBase(BaseModelWithConfig):
     sensor_number: Optional[str] = None
     transmitter_id: Optional[str] = None
     sensor_detail_id: Optional[int] = None
-    start_time: datetime
-    end_time: Optional[datetime] = None
+    start_time: date
+    end_time: Optional[date] = None
     end_reason: Optional[str] = None
 
 class SensorCreate(SensorBase):
@@ -205,14 +205,17 @@ class WearRecordBase(BaseModelWithConfig):
     cause_analysis: Optional[str] = None
 
 class WearRecordCreate(WearRecordBase):
-    wear_time: Optional[datetime] = None
+    wear_time: Optional[date] = None
+    wear_end_time: Optional[date] = None
 
 class WearRecordUpdate(WearRecordBase):
-    wear_time: Optional[datetime] = None
+    wear_time: Optional[date] = None
+    wear_end_time: Optional[date] = None
 
 class WearRecordResponse(WearRecordBase):
     wear_record_id: int
-    wear_time: datetime
+    wear_time: date
+    wear_end_time: Optional[date] = None
     person_name: Optional[str] = None
     batch_number: Optional[str] = None
     test_number: Optional[str] = None

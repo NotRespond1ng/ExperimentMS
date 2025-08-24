@@ -180,12 +180,12 @@
         </el-table-column>
         <el-table-column prop="start_time" label="开始时间" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.start_time) }}
+            {{ formatDate(row.start_time) }}
           </template>
         </el-table-column>
         <el-table-column prop="end_time" label="结束时间" width="180">
           <template #default="{ row }">
-            {{ row.end_time ? formatDateTime(row.end_time) : getSensorStatus(row).label }}
+            {{ row.end_time ? formatDate(row.end_time) : getSensorStatus(row).label }}
           </template>
         </el-table-column>
         <el-table-column prop="end_reason" label="结束原因" width="150">
@@ -355,11 +355,11 @@
             <el-form-item label="开始时间" prop="start_time">
               <el-date-picker
                 v-model="form.start_time"
-                type="datetime"
+                type="date"
                 placeholder="选择开始时间"
                 style="width: 100%"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </el-col>
@@ -367,11 +367,11 @@
             <el-form-item label="结束时间">
               <el-date-picker
                 v-model="form.end_time"
-                type="datetime"
+                type="date"
                 placeholder="选择结束时间（可选）"
                 style="width: 100%"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </el-col>
@@ -506,11 +506,11 @@
                     >
                       <el-date-picker
                         v-model="sensor.start_time"
-                        type="datetime"
+                        type="date"
                         placeholder="请选择开始时间"
                         style="width: 100%"
-                        format="YYYY-MM-DD HH:mm:ss"
-                        value-format="YYYY-MM-DD HH:mm:ss"
+                        format="YYYY-MM-DD"
+                        value-format="YYYY-MM-DD"
                       />
                     </el-form-item>
                   </el-col>
@@ -573,11 +573,11 @@
                     <el-form-item label="结束时间">
                       <el-date-picker
                         v-model="sensor.end_time"
-                        type="datetime"
+                        type="date"
                         placeholder="请选择结束时间（选填）"
                         style="width: 100%"
-                        format="YYYY-MM-DD HH:mm:ss"
-                        value-format="YYYY-MM-DD HH:mm:ss"
+                        format="YYYY-MM-DD"
+                        value-format="YYYY-MM-DD"
                         clearable
                       />
                     </el-form-item>
@@ -624,7 +624,7 @@ import { useDataStore, type Sensor, type Person, type Batch } from '../stores/da
 import { ApiService, type SensorDetail } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { usePagination } from '@/composables/usePagination'
-import { formatDateTime } from '@/utils/formatters'
+import { formatDateTime, formatDate } from '@/utils/formatters'
 import { exportToExcel } from '@/utils/excel'
 
 const dataStore = useDataStore()
@@ -685,6 +685,13 @@ const handleVisibilityChange = async () => {
 onMounted(async () => {
   try {
     loading.value = true
+    
+    // 强制清除所有相关缓存，确保获取最新数据
+    dataStore.clearCache('sensors')
+    dataStore.clearCache('persons')
+    dataStore.clearCache('batches')
+    dataStore.clearCache('sensorDetails')
+    
     const [sensorsData, personsData, batchesData, sensorDetailsData] = await Promise.all([
       dataStore.loadSensors(),
       dataStore.loadPersons(),

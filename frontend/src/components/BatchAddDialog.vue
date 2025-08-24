@@ -172,20 +172,20 @@
                   <el-form-item label="佩戴开始时间">
                     <el-date-picker
                       v-model="param.wear_time"
-                      type="datetime"
+                      type="date"
                       placeholder="选择佩戴开始时间"
-                      format="YYYY-MM-DD HH:mm"
-                      value-format="YYYY-MM-DD HH:mm:ss"
+                      format="YYYY-MM-DD"
+                      value-format="YYYY-MM-DD"
                       style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="佩戴结束时间">
                     <el-date-picker
                       v-model="param.wear_end_time"
-                      type="datetime"
+                      type="date"
                       placeholder="选择佩戴结束时间"
-                      format="YYYY-MM-DD HH:mm"
-                      value-format="YYYY-MM-DD HH:mm:ss"
+                      format="YYYY-MM-DD"
+                      value-format="YYYY-MM-DD"
                       style="width: 100%"
                     />
                   </el-form-item>
@@ -377,7 +377,7 @@ function createSensorParameter(sensorDetailId: number): SensorParameter {
   const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
-  const beijingTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}` // YYYY-MM-DD HH:mm:ss格式
+  const beijingTimeStr = `${year}-${month}-${day}` // YYYY-MM-DD格式
   
   return {
     sensor_detail_id: sensorDetailId,

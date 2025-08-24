@@ -131,20 +131,20 @@
                 <el-form-item :label="`佩戴开始时间`">
                   <el-date-picker
                     v-model="param.wear_time"
-                    type="datetime"
+                    type="date"
                     placeholder="选择佩戴开始时间"
-                    format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DD HH:mm:ss"
+                    format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
                 </el-form-item>
                 <el-form-item :label="`佩戴结束时间`">
                   <el-date-picker
                     v-model="param.wear_end_time"
-                    type="datetime"
+                    type="date"
                     placeholder="选择佩戴结束时间（可选）"
-                    format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DD HH:mm:ss"
+                    format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
                 </el-form-item>
@@ -328,37 +328,35 @@ const availableSensorDetails = computed(() => {
 
 // 方法
 const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
-  // 获取佩戴开始时间
+  // 获取佩戴开始时间和结束时间
   let wearTime = ''
+  let wearEndTime = ''
   
   if (props.isEdit && props.editData?.sensor_parameters) {
-    // 编辑模式：从 editData 中查找对应传感器的 wear_time
+    // 编辑模式：从 editData 中查找对应传感器的数据
     const existingParam = props.editData.sensor_parameters.find(
       (param: SensorParameter) => param.sensor_detail_id === sensorDetailId
     )
-    if (existingParam && existingParam.wear_time) {
-      wearTime = existingParam.wear_time
+    if (existingParam) {
+      wearTime = existingParam.wear_time || ''
+      wearEndTime = existingParam.wear_end_time || ''
     } else {
-      // 如果编辑模式下没有找到对应的 wear_time，使用当前时间（用于编辑时添加新传感器的情况）
+      // 如果编辑模式下没有找到对应的数据，使用当前日期（用于编辑时添加新传感器的情况）
       const now = new Date()
       const year = now.getFullYear()
       const month = String(now.getMonth() + 1).padStart(2, '0')
       const day = String(now.getDate()).padStart(2, '0')
-      const hours = String(now.getHours()).padStart(2, '0')
-      const minutes = String(now.getMinutes()).padStart(2, '0')
-      const seconds = String(now.getSeconds()).padStart(2, '0')
-      wearTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+      wearTime = `${year}-${month}-${day}`
+      wearEndTime = ''
     }
   } else {
-    // 新建模式：使用当前本地时间，格式为 YYYY-MM-DD HH:mm:ss
+    // 新建模式：使用当前本地时间，格式为 YYYY-MM-DD
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
     const day = String(now.getDate()).padStart(2, '0')
-    const hours = String(now.getHours()).padStart(2, '0')
-    const minutes = String(now.getMinutes()).padStart(2, '0')
-    const seconds = String(now.getSeconds()).padStart(2, '0')
-    wearTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    wearTime = `${year}-${month}-${day}`
+    wearEndTime = ''
   }
   
   // 从传感器管理数据中查找对应的sensor_id
@@ -372,7 +370,8 @@ const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
   const selectedPerson = props.persons?.find(person => person.person_id === formData.person_id)
   const userName = selectedPerson?.person_name || ''
   
-  return {
+  // 在编辑模式下，从现有数据中获取其他字段的值
+  let defaultParam = {
     sensor_detail_id: sensorDetailId,
     sensor_id: relatedSensor?.sensor_id || 0,
     user_name: userName, // 人员信息（来自persons表的person_name）
@@ -386,8 +385,32 @@ const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
     abnormal_situation: '',
     reason_analysis: '',
     wear_time: wearTime,
-    wear_end_time: ''
+    wear_end_time: wearEndTime
   }
+  
+  // 如果是编辑模式，从现有数据中填充其他字段
+  if (props.isEdit && props.editData?.sensor_parameters) {
+    const existingParam = props.editData.sensor_parameters.find(
+      (param: SensorParameter) => param.sensor_detail_id === sensorDetailId
+    )
+    if (existingParam) {
+      defaultParam = {
+        ...defaultParam,
+        wear_record_id: existingParam.wear_record_id,
+        nickname: existingParam.nickname || '',
+        applicator_lot_no: existingParam.applicator_lot_no || '',
+        sensor_lot_no: existingParam.sensor_lot_no || relatedSensor?.sensor_lot_no || '',
+        sensor_batch: existingParam.sensor_batch || relatedSensor?.sensor_batch || '',
+        sensor_number: existingParam.sensor_number || '',
+        transmitter_id: existingParam.transmitter_id || relatedSensor?.transmitter_id || '',
+        wear_position: existingParam.wear_position || '',
+        abnormal_situation: existingParam.abnormal_situation || '',
+        reason_analysis: existingParam.reason_analysis || ''
+      }
+    }
+  }
+  
+  return defaultParam
 }
 
 const getSensorDisplayName = (sensor: SensorDetail): string => {
