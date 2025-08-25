@@ -11,7 +11,7 @@
  Target Server Version : 80034
  File Encoding         : 65001
 
- Date: 25/08/2025 14:56:16
+ Date: 25/08/2025 18:39:02
 */
 
 SET NAMES utf8mb4;
@@ -94,12 +94,12 @@ CREATE TABLE `competitor_files`  (
   INDEX `idx_upload_time`(`upload_time` ASC) USING BTREE,
   CONSTRAINT `competitor_files_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `persons` (`person_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `competitor_files_ibfk_2` FOREIGN KEY (`batch_id`) REFERENCES `batches` (`batch_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '竞品文件表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '竞品文件表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of competitor_files
 -- ----------------------------
-INSERT INTO `competitor_files` VALUES (14, 35, 9, 'D:\\Trae_Projects\\ExprimentMS\\backend\\uploads\\competitor_files\\伍珊珊-数据图谱(血糖版).xlsx', '2025-08-07 19:59:25');
+INSERT INTO `competitor_files` VALUES (15, 24, 2, 'D:\\Trae_Projects\\ExperimentMS\\backend\\uploads\\competitor_files\\requirements.txt', '2025-08-25 18:28:57');
 
 -- ----------------------------
 -- Table structure for daily_experiment_data
@@ -532,7 +532,7 @@ CREATE TABLE `sensors`  (
   `sensor_batch` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器批次 (与传感器号值相同)',
   `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 传感器号 (与传感器批次值相同)',
   `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '新增: 发射器号',
-  `start_time` date NULL DEFAULT 'curdate()' COMMENT '佩戴记录创建时间',
+  `start_time` date NULL DEFAULT (curdate()) COMMENT '佩戴记录创建时间',
   `end_time` date NULL DEFAULT NULL COMMENT '佩戴结束时间',
   `end_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器结束使用原因（可选）',
   PRIMARY KEY (`sensor_id`) USING BTREE,
@@ -574,17 +574,11 @@ CREATE TABLE `user_permissions`  (
   INDEX `user_id`(`user_id` ASC) USING BTREE,
   INDEX `ix_user_permissions_permission_id`(`permission_id` ASC) USING BTREE,
   CONSTRAINT `user_permissions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 69 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 84 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_permissions
 -- ----------------------------
-INSERT INTO `user_permissions` VALUES (14, 4, 'BATCH_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (15, 4, 'PERSON_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (16, 4, 'EXPERIMENT_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (17, 4, 'COMPETITOR_DATA', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (18, 4, 'FINGER_BLOOD_DATA', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (19, 4, 'SENSOR_DATA', 1, 1, 0);
 INSERT INTO `user_permissions` VALUES (46, 3, 'BATCH_MANAGEMENT', 1, 0, 0);
 INSERT INTO `user_permissions` VALUES (47, 3, 'PERSON_MANAGEMENT', 1, 0, 0);
 INSERT INTO `user_permissions` VALUES (48, 3, 'EXPERIMENT_MANAGEMENT', 1, 0, 0);
@@ -593,18 +587,8 @@ INSERT INTO `user_permissions` VALUES (50, 3, 'FINGER_BLOOD_DATA', 1, 0, 0);
 INSERT INTO `user_permissions` VALUES (51, 3, 'SENSOR_DATA', 1, 0, 0);
 INSERT INTO `user_permissions` VALUES (52, 3, 'SENSOR_DETAILS', 1, 0, 0);
 INSERT INTO `user_permissions` VALUES (53, 3, 'WEAR_RECORDS', 1, 0, 0);
-INSERT INTO `user_permissions` VALUES (54, 6, 'BATCH_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (55, 6, 'PERSON_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (56, 6, 'EXPERIMENT_MANAGEMENT', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (57, 6, 'COMPETITOR_DATA', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (58, 6, 'FINGER_BLOOD_DATA', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (59, 6, 'SENSOR_DATA', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (60, 6, 'SENSOR_DETAILS', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (61, 6, 'WEAR_RECORDS', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (62, 6, 'EXPERIMENT_DATA_ANALYSIS', 1, 1, 0);
 INSERT INTO `user_permissions` VALUES (63, 1, 'EXPERIMENT_DATA_ANALYSIS', 1, 1, 0);
 INSERT INTO `user_permissions` VALUES (64, 3, 'EXPERIMENT_DATA_ANALYSIS', 1, 1, 0);
-INSERT INTO `user_permissions` VALUES (65, 4, 'EXPERIMENT_DATA_ANALYSIS', 1, 1, 0);
 
 -- ----------------------------
 -- Table structure for users
@@ -619,15 +603,13 @@ CREATE TABLE `users`  (
   `updateTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   PRIMARY KEY (`user_id`) USING BTREE,
   UNIQUE INDEX `uq_username`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
 INSERT INTO `users` VALUES (1, 'admin', '$2b$12$OrEfSmkameHVVRayq/Y4BORSYxWXbu0P8H135ZlkduYFGo3Wr8VCG', 'Admin', '2025-07-23 19:12:57', '2025-07-23 12:30:03');
 INSERT INTO `users` VALUES (3, 'test1', '$2b$12$V7gMAszAdAi/hy0n3.Ph5eIWvErYegHNhZqpUNgz1YVEpCEn5vDiS', 'User', '2025-07-23 17:01:22', '2025-07-23 17:01:22');
-INSERT INTO `users` VALUES (4, 'test2', '$2b$12$WFWLtNoMtGGuuleu5bU0pOFVIr3WuINmDakZqOf4KeW82nVVFR5/i', 'User', '2025-07-24 11:30:49', '2025-07-24 11:30:49');
-INSERT INTO `users` VALUES (6, '22854', '$2b$12$WhuWgjTOoWcdDTo2vPO99OFwb4xw6Tj7um4QSvsTcGxcAVrbHtAou', 'User', '2025-08-25 11:30:45', '2025-08-25 13:31:36');
 
 -- ----------------------------
 -- Table structure for wear_records
@@ -645,7 +627,7 @@ CREATE TABLE `wear_records`  (
   `sensor_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '传感器号',
   `transmitter_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发射器号',
   `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名称',
-  `wear_time` date NULL DEFAULT 'curdate()' COMMENT '佩戴记录创建时间',
+  `wear_time` date NULL DEFAULT (curdate()) COMMENT '佩戴记录创建时间',
   `wear_end_time` date NULL DEFAULT NULL COMMENT '佩戴结束时间',
   `wear_position` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名称',

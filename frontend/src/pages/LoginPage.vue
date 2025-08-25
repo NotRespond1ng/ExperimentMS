@@ -249,9 +249,9 @@ const handleRegister = async () => {
           password: registerForm.password
         })
         
-        if (response.data) {
+        if (response) {
           // 注册成功，自动登录
-          const { access_token, user_info } = response.data
+          const { access_token, user_info } = response
           
           // 保存token和用户信息
           localStorage.setItem('token', access_token)
