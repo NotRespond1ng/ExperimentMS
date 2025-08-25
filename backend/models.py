@@ -24,6 +24,7 @@ class ModuleEnum(enum.Enum):
     SENSOR_DATA = "sensor_data"
     SENSOR_DETAILS = "sensor_details"
     WEAR_RECORDS = "wear_records"
+    EXPERIMENT_DATA_ANALYSIS = "experiment_data_analysis"
 
 class Batch(Base):
     __tablename__ = "batches"

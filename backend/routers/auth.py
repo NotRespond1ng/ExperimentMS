@@ -185,7 +185,19 @@ def register(register_data: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     
-    logger.info(f"用户注册成功: {db_user.username} (ID: {db_user.user_id})")
+    # 为新用户分配所有模块的可读权限
+    for module in ModuleEnum:
+        permission = UserPermission(
+            user_id=db_user.user_id,
+            module=module,
+            can_read=True,
+            can_write=False,
+            can_delete=False
+        )
+        db.add(permission)
+    db.commit()
+    
+    logger.info(f"用户注册成功: {db_user.username} (ID: {db_user.user_id})，已分配默认可读权限")
     
     # 注册成功后自动登录
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

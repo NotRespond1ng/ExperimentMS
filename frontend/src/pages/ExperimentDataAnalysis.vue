@@ -44,6 +44,7 @@
         <el-button 
           type="primary" 
           @click="showUploadDialog = true"
+          v-if="authStore.hasModulePermission('experiment_data_analysis', 'write')"
         >
           <el-icon><Upload /></el-icon>
           导入数据
@@ -159,6 +160,10 @@ import { ElMessage } from 'element-plus'
 import { Upload, UploadFilled, Document } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { ApiService } from '../services/api'
+import { useAuthStore } from '../stores/auth'
+
+// 权限控制
+const authStore = useAuthStore()
 
 // 响应式数据
 const batches = ref([])

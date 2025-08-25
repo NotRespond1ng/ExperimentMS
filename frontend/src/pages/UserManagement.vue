@@ -21,7 +21,7 @@
 
     <!-- 用户列表 -->
     <el-card>
-      <el-table :data="users" v-loading="loading" stripe>
+      <el-table :data="users || []" v-loading="loading" stripe>
       <el-table-column prop="user_id" label="ID" width="80" />
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="role" label="角色">
@@ -64,7 +64,7 @@
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="users.length"
+          :total="users?.length || 0"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -119,7 +119,7 @@
           />
         </div>
       </div>
-      <el-table :data="permissionList" border>
+      <el-table :data="permissionList || []" border>
         <el-table-column prop="module" label="模块" width="150">
           <template #default="{ row }">
             {{ getModuleName(row.module) }}
@@ -266,9 +266,9 @@ const moduleNames = {
   'competitor_data': '竞品数据',
   'finger_blood_data': '指尖血数据',
   'sensor_data': '传感器数据',
-  'sensor_detail_management': '传感器详细信息管理',
-  'experiment_data_analysis': '实验数据分析',
-  'wear_record_management': '佩戴记录管理'
+  'sensor_details': '传感器详细信息管理',
+  'wear_records': '佩戴记录管理',
+  'experiment_data_analysis': '实验数据分析'
 }
 
 const getModuleName = (module: string) => {
@@ -283,10 +283,11 @@ const fetchUsers = async () => {
   try {
     loading.value = true
     const response = await api.get('/api/auth/users')
-    users.value = response.data
+    users.value = Array.isArray(response.data) ? response.data : []
   } catch (error) {
     console.error('获取用户列表失败:', error)
     ElMessage.error('获取用户列表失败')
+    users.value = []
   } finally {
     loading.value = false
   }
@@ -422,15 +423,23 @@ const clearAllPermissions = (permission: Permission) => {
 
 // 列全选功能
 const selectAllColumn = (columnType: 'can_read' | 'can_write' | 'can_delete') => {
+  if (!Array.isArray(permissionList.value)) return
+  
   permissionList.value.forEach(permission => {
-    permission[columnType] = true
+    if (permission && typeof permission === 'object') {
+      permission[columnType] = true
+    }
   })
 }
 
 // 列清空功能
 const clearAllColumn = (columnType: 'can_read' | 'can_write' | 'can_delete') => {
+  if (!Array.isArray(permissionList.value)) return
+  
   permissionList.value.forEach(permission => {
-    permission[columnType] = false
+    if (permission && typeof permission === 'object') {
+      permission[columnType] = false
+    }
   })
 }
 
@@ -440,10 +449,8 @@ const savePermissions = async () => {
   try {
     saving.value = true
     
-    // 只发送有权限的模块
-    const permissions = permissionList.value.filter(p => 
-      p.can_read || p.can_write || p.can_delete
-    )
+    // 发送所有模块的完整权限列表
+    const permissions = permissionList.value
     
     await api.post('/api/auth/assign-permissions', {
       user_id: selectedUser.value.user_id,
@@ -463,12 +470,16 @@ const savePermissions = async () => {
 
 // 分页处理函数
 const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  currentPage.value = 1
+  if (typeof val === 'number' && val > 0) {
+    pageSize.value = val
+    currentPage.value = 1
+  }
 }
 
 const handleCurrentChange = (val: number) => {
-  currentPage.value = val
+  if (typeof val === 'number' && val > 0) {
+    currentPage.value = val
+  }
 }
 
 onMounted(() => {

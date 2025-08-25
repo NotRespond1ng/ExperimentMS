@@ -258,15 +258,24 @@ const handleRegister = async () => {
           authStore.setUser(user_info)
           authStore.setToken(access_token)
           
-          ElMessage.success('注册成功，已自动登录')
+          // 显示注册成功提示
+          ElMessage({
+            message: '注册成功！已自动为您登录',
+            type: 'success',
+            duration: 3000,
+            showClose: true
+          })
           
-          // 检查是否有重定向参数
-          const redirect = route.query.redirect as string
-          if (redirect && redirect !== '/login') {
-            router.push(redirect)
-          } else {
-            router.push('/dashboard')
-          }
+          // 延迟跳转，确保用户能看到提示信息
+          setTimeout(() => {
+            // 检查是否有重定向参数
+            const redirect = route.query.redirect as string
+            if (redirect && redirect !== '/login') {
+              router.push(redirect)
+            } else {
+              router.push('/dashboard')
+            }
+          }, 1500)
         }
       } catch (error: any) {
         console.error('注册错误:', error)

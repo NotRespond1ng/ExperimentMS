@@ -202,7 +202,7 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button
-              :disabled="!authStore.hasModulePermission('sensor_management', 'write')"
+              :disabled="!authStore.hasModulePermission('sensor_data', 'write')"
               type="primary"
               size="small"
               @click="handleEdit(row)"
@@ -210,7 +210,7 @@
               编辑
             </el-button>
             <el-button
-              :disabled="!authStore.hasModulePermission('sensor_management', 'delete')"
+              :disabled="!authStore.hasModulePermission('sensor_data', 'delete')"
               type="danger"
               size="small"
               @click="handleDelete(row)"

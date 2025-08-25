@@ -19,7 +19,22 @@ def get_sensors(
     current_user: User = Depends(check_module_permission(ModuleEnum.SENSOR_DATA, "read"))
 ):
     """获取传感器列表"""
-    query = db.query(Sensor).join(Batch).join(Person)
+    # 修复：明确指定要查询的字段，避免查询不存在的'sensor_name'列
+    query = db.query(
+        Sensor.sensor_id,
+        Sensor.person_id,
+        Sensor.batch_id,
+        Sensor.sensor_detail_id,
+        Sensor.sensor_lot_no,
+        Sensor.sensor_batch,
+        Sensor.sensor_number,
+        Sensor.transmitter_id,
+        Sensor.start_time,
+        Sensor.end_time,
+        Sensor.end_reason,
+        Person.person_name,
+        Batch.batch_number
+    ).join(Batch, Sensor.batch_id == Batch.batch_id).join(Person, Sensor.person_id == Person.person_id)
     
     if batch_id:
         query = query.filter(Sensor.batch_id == batch_id)
@@ -29,23 +44,23 @@ def get_sensors(
     
     sensors = query.offset(skip).limit(limit).all()
     
-    # 添加关联信息
+    # 将查询结果手动映射到响应模型
     result = []
-    for sensor in sensors:
+    for row in sensors:
         sensor_dict = {
-            "sensor_id": sensor.sensor_id,
-            "person_id": sensor.person_id,
-            "batch_id": sensor.batch_id,
-            "sensor_detail_id": sensor.sensor_detail_id,
-            "sensor_lot_no": sensor.sensor_lot_no,
-            "sensor_batch": sensor.sensor_batch,
-            "sensor_number": sensor.sensor_number,
-            "transmitter_id": sensor.transmitter_id,
-            "start_time": sensor.start_time,
-            "end_time": sensor.end_time,
-            "end_reason": sensor.end_reason,
-            "person_name": sensor.person.person_name if sensor.person else None,
-            "batch_number": sensor.batch.batch_number if sensor.batch else None
+            "sensor_id": row.sensor_id,
+            "person_id": row.person_id,
+            "batch_id": row.batch_id,
+            "sensor_detail_id": row.sensor_detail_id,
+            "sensor_lot_no": row.sensor_lot_no,
+            "sensor_batch": row.sensor_batch,
+            "sensor_number": row.sensor_number,
+            "transmitter_id": row.transmitter_id,
+            "start_time": row.start_time,
+            "end_time": row.end_time,
+            "end_reason": row.end_reason,
+            "person_name": row.person_name,
+            "batch_number": row.batch_number
         }
         result.append(SensorResponse(**sensor_dict))
     

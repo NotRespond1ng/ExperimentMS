@@ -388,7 +388,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted } from 'vue'
+import { ref, computed, reactive, watch, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { TrendCharts, Plus, Download, Delete } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
@@ -909,8 +909,13 @@ const handleBatchSubmit = async () => {
 // 编辑数据
 const handleEdit = (row: FingerBloodData) => {
   isEdit.value = true
-  dialogVisible.value = true
-  Object.assign(form, row)
+  // 先设置batch_id，确保filteredPersonsForForm能正确计算
+  form.batch_id = row.batch_id
+  // 使用nextTick确保DOM更新后再设置其他字段
+  nextTick(() => {
+    Object.assign(form, row)
+    dialogVisible.value = true
+  })
 }
 
 // 删除数据

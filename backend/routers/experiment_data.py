@@ -7,16 +7,20 @@ import io
 from datetime import datetime
 
 from database import get_db
-from models import DailyExperimentData, Batch, Person
+from models import DailyExperimentData, Batch, Person, User, ModuleEnum
 from schemas import DailyExperimentDataResponse, ExperimentDataSummary, BatchResponse, PersonResponse, UploadResponse
 from datetime import date
 from logging_setup import get_logger
+from routers.auth import check_module_permission
 
 router = APIRouter(prefix="/api/experimentData", tags=["实验数据分析"])
 logger = get_logger(__name__)
 
 @router.get("/batches", response_model=List[BatchResponse])
-def get_batches(db: Session = Depends(get_db)):
+def get_batches(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "read"))
+):
     """获取所有实验批次"""
     try:
         batches = db.query(Batch).all()
@@ -26,7 +30,10 @@ def get_batches(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="获取批次列表失败")
 
 @router.get("/batches-with-data", response_model=List[BatchResponse])
-def get_batches_with_data(db: Session = Depends(get_db)):
+def get_batches_with_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "read"))
+):
     """获取有实验数据的批次列表"""
     try:
         # 查询有实验数据的批次
@@ -40,7 +47,11 @@ def get_batches_with_data(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="获取有数据的批次列表失败")
 
 @router.get("/persons", response_model=List[PersonResponse])
-def get_persons_by_batch(batch_id: int, db: Session = Depends(get_db)):
+def get_persons_by_batch(
+    batch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "read"))
+):
     """根据批次ID获取人员列表"""
     try:
         persons = db.query(Person).filter(Person.batch_id == batch_id).all()
@@ -50,7 +61,11 @@ def get_persons_by_batch(batch_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="获取人员列表失败")
 
 @router.get("/persons-with-data", response_model=List[PersonResponse])
-def get_persons_with_data_by_batch(batch_id: int, db: Session = Depends(get_db)):
+def get_persons_with_data_by_batch(
+    batch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "read"))
+):
     """根据批次ID获取有实验数据的人员列表"""
     try:
         # 查询有实验数据的人员
@@ -66,7 +81,11 @@ def get_persons_with_data_by_batch(batch_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=500, detail="获取有数据的人员列表失败")
 
 @router.get("/data", response_model=ExperimentDataSummary)
-def get_experiment_data(person_id: int, db: Session = Depends(get_db)):
+def get_experiment_data(
+    person_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "read"))
+):
     """获取指定人员的每日MARD/PARD数据及总体平均值"""
     try:
         # 获取每日数据
@@ -99,7 +118,11 @@ def get_experiment_data(person_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="获取实验数据失败")
 
 @router.post("/upload")
-async def upload_experiment_data(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_experiment_data(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_DATA_ANALYSIS, "write"))
+):
     """上传并处理Excel实验数据文件"""
     try:
         # 验证文件类型
