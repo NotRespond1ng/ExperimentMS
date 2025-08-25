@@ -1,2 +1,5 @@
 .codebuddy/.ignored_image/0e3e9903d9d814616d485edbd2871558.png
 .codebuddy/.ignored_image/
+
+.trae/*
+.vercel/*
