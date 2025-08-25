@@ -371,7 +371,7 @@ const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
   const userName = selectedPerson?.person_name || ''
   
   // 在编辑模式下，从现有数据中获取其他字段的值
-  let defaultParam = {
+  let defaultParam: SensorParameter = {
     sensor_detail_id: sensorDetailId,
     sensor_id: relatedSensor?.sensor_id || 0,
     user_name: userName, // 人员信息（来自persons表的person_name）
@@ -464,7 +464,7 @@ const removeSensorParam = async (index: number) => {
   const param = formData.sensor_parameters[index];
   
   // 在编辑模式下，如果传感器参数有wear_record_id，需要调用父组件的删除方法
-  if (props.isEdit && param.wear_record_id && props.removeSensorFromEdit) {
+  if (props.isEdit && param.wear_record_id !== undefined && props.removeSensorFromEdit) {
     try {
       await props.removeSensorFromEdit(param.wear_record_id);
       // 成功删除后从前端数据中移除

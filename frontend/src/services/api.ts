@@ -135,6 +135,7 @@ export interface WearRecord {
   abnormal_situation?: string // 异常情况
   cause_analysis?: string     // 原因分析
   wear_time?: string
+  wear_end_time?: string
   batch_number?: string
   person_name?: string
   sensor_detail?: SensorDetail
