@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -6,6 +6,8 @@ from datetime import datetime
 import json
 import os
 import logging
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 # 导入日志配置
 from logging_setup import setup_logger, log_startup_info, log_shutdown_info, get_logger
@@ -44,6 +46,29 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# 文件上传大小限制中间件
+class FileSizeLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, max_size: int = 20 * 1024 * 1024):  # 默认20MB
+        super().__init__(app)
+        self.max_size = max_size
+    
+    async def dispatch(self, request: Request, call_next):
+        # 检查Content-Length头
+        content_length = request.headers.get('content-length')
+        if content_length:
+            content_length = int(content_length)
+            if content_length > self.max_size:
+                return Response(
+                    content=f"Request entity too large. Maximum allowed size is {self.max_size} bytes.",
+                    status_code=413
+                )
+        
+        response = await call_next(request)
+        return response
+
+# 添加文件大小限制中间件
+app.add_middleware(FileSizeLimitMiddleware, max_size=20 * 1024 * 1024)  # 20MB限制
 
 # 配置CORS
 app.add_middleware(

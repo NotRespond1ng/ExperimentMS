@@ -209,7 +209,7 @@
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                支持 xlsx/xls/csv/txt/pdf 格式文件，文件大小不超过 10MB
+                支持 xlsx/xls/csv/txt/pdf 格式文件，文件大小不超过 20MB
               </div>
             </template>
           </el-upload>
@@ -475,9 +475,9 @@ const handleUpload = () => {
 // 文件选择处理
 const handleFileChange = (file: UploadFile) => {
   if (file.raw) {
-    // 检查文件大小（10MB限制）
-    if (file.raw.size > 10 * 1024 * 1024) {
-      ElMessage.error('文件大小不能超过 10MB')
+    // 检查文件大小（20MB限制）
+    if (file.raw.size > 20 * 1024 * 1024) {
+      ElMessage.error('文件大小不能超过 20MB')
       fileList.value = []
       uploadForm.file = null
       return
