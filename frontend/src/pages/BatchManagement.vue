@@ -48,7 +48,13 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="batch_id" label="批次ID" width="100" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始batch_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="batch_id" label="批次ID" width="100" /> -->
         <el-table-column prop="batch_number" label="实验批次号" min-width="150">
           <template #default="{ row }">
             <el-tag type="primary" size="small">

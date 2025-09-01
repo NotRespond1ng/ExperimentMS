@@ -148,7 +148,13 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="sensor_id" label="传感器ID" width="100" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始sensor_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="sensor_id" label="传感器ID" width="100" /> -->
         <el-table-column prop="sensor_lot_no" label="传感器批号" width="140">
           <template #default="{ row }">
             <span>{{ row.sensor_lot_no || '-' }}</span>

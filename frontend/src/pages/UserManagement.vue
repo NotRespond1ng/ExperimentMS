@@ -22,7 +22,14 @@
     <!-- 用户列表 -->
     <el-card>
       <el-table :data="users || []" v-loading="loading" stripe>
-      <el-table-column prop="user_id" label="ID" width="80" />
+      <!-- 序号列 -->
+      <el-table-column label="序号" width="80" align="center">
+        <template #default="{ $index }">
+          {{ (currentPage - 1) * pageSize + $index + 1 }}
+        </template>
+      </el-table-column>
+      <!-- 隐藏原始user_id列，但保留数据用于后端传递 -->
+      <!-- <el-table-column prop="user_id" label="ID" width="80" /> -->
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="role" label="角色">
         <template #default="{ row }">

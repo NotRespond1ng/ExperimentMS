@@ -115,7 +115,13 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="finger_blood_file_id" label="数据ID" width="100" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始finger_blood_file_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="finger_blood_file_id" label="数据ID" width="100" /> -->
         <el-table-column prop="collection_time" label="采集时间" min-width="180" />
         <el-table-column prop="blood_glucose_value" label="血糖值(mmol/L)" min-width="200">
           <template #default="{ row }">

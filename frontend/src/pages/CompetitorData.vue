@@ -67,7 +67,13 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="competitor_file_id" label="文件ID" width="100" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始competitor_file_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="competitor_file_id" label="文件ID" width="100" /> -->
         <el-table-column prop="file_path" label="文件名" min-width="200">
           <template #default="{ row }">
             <div class="file-name">

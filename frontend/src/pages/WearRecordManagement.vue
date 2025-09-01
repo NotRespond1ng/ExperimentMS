@@ -94,6 +94,11 @@
         style="width: 100%"
         v-loading="loading"
       >
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column label="人员信息" width="180">
           <template #default="{ row }">
             <div class="person-info">

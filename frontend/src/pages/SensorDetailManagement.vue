@@ -73,7 +73,13 @@
         v-loading="loading"
         :row-style="{ height: '55px' }"
       >
-        <el-table-column prop="sensor_detail_id" label="ID" width="80" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始sensor_detail_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="sensor_detail_id" label="ID" width="80" /> -->
         <el-table-column prop="sterilization_date" label="灭菌日期" width="120">
           <template #default="{ row }">
             {{ row.sterilization_date ? formatDateToDots(row.sterilization_date) : '-' }}

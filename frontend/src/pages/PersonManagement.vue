@@ -56,15 +56,21 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="person_id" label="人员ID" width="100" />
-        <el-table-column prop="person_name" label="姓名" min-width="120">
+        <el-table-column label="序号" width="120" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <!-- 隐藏原始person_id列，但保留数据用于后端传递 -->
+        <!-- <el-table-column prop="person_id" label="人员ID" width="100" /> -->
+        <el-table-column prop="person_name" label="姓名" width="180">
           <template #default="{ row }">
             <el-tag type="success" size="small">
               {{ row.person_name }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="gender" label="性别" width="80">
+        <el-table-column prop="gender" label="性别" width="120">
           <template #default="{ row }">
             <el-tag
               :type="row.gender === 'Male' ? 'primary' : row.gender === 'Female' ? 'danger' : 'info'"
@@ -74,12 +80,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="age" label="年龄" min-width="80">
+        <el-table-column prop="age" label="年龄" width="120">
           <template #default="{ row }">
             {{ row.age || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="batch_number" label="所属实验批次" min-width="120">
+        <el-table-column prop="batch_number" label="所属实验批次" min-width="200">
           <template #default="{ row }">
             <el-tag v-if="row.batch_number" type="info" size="small">
               {{ row.batch_number }}
