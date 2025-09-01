@@ -592,6 +592,7 @@ const handleSubmit = async () => {
             batch_id: form.batch_id
           })
           ElMessage.success('更新成功')
+          // updatePerson方法内部已经重新加载了完整的人员数据，无需额外刷新
         } else {
           // 新建
           await dataStore.addPerson({

@@ -465,6 +465,7 @@ const savePermissions = async () => {
     })
     
     ElMessage.success('权限保存成功')
+    await fetchUsers() // 刷新用户列表以显示最新的updateTime
     showPermissionDialog.value = false
   } catch (error: any) {
     console.error('保存权限失败:', error)

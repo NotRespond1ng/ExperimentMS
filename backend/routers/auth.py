@@ -286,6 +286,10 @@ def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_d
     if user_data.role is not None:
         db_user.role = user_data.role
     
+    # 手动更新updateTime字段
+    from datetime import datetime
+    db_user.updateTime = datetime.now()
+    
     db.commit()
     db.refresh(db_user)
     
@@ -346,6 +350,10 @@ def assign_permissions(request: AssignPermissionsRequest, db: Session = Depends(
             can_delete=perm.can_delete
         )
         db.add(db_permission)
+    
+    # 更新用户的updateTime字段
+    from datetime import datetime
+    user.updateTime = datetime.now()
     
     db.commit()
     

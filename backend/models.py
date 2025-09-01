@@ -125,7 +125,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False, comment="哈希加密后的密码")
     role = Column(Enum(RoleEnum), nullable=False, comment="用户角色 (Admin/User)")
     createTime = Column(DateTime, nullable=False, default=datetime.now, comment="创建时间")
-    updateTime = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now, comment="最后更新时间")
+    updateTime = Column(DateTime, nullable=False, default=datetime.now, comment="最后更新时间")
     
     # 关系
     permissions = relationship("UserPermission", back_populates="user")
