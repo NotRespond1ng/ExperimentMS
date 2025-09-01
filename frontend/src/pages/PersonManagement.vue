@@ -597,8 +597,10 @@ const handleSubmit = async () => {
           ElMessage.success('创建成功')
         }
         
-        // 更新批次数据
-        batches.value = await ApiService.getBatchesForPerson()
+        // 更新批次数据（仅在新建时需要，编辑时dataStore.updatePerson已处理）
+        if (!isEdit.value) {
+          batches.value = await ApiService.getBatchesForPerson()
+        }
         
         dialogVisible.value = false
         resetForm()

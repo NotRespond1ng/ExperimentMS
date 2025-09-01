@@ -188,7 +188,7 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="实验成员" prop="member_ids">
+        <el-form-item label="实验成员" prop="member_ids" label-width="120px">
           <el-select
             v-model="form.member_ids"
             placeholder="请选择实验成员"
@@ -230,7 +230,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Search, Plus, Download, User, UserFilled } from '@element-plus/icons-vue'
 import { useDataStore, type Experiment } from '../stores/data'
@@ -443,13 +443,15 @@ const handleEdit = (row: Experiment) => {
   isEdit.value = true
   dialogVisible.value = true
   
-  // 正确处理表单数据，特别是member_ids字段
-  Object.assign(form, {
-    experiment_id: row.experiment_id,
-    batch_id: row.batch_id,
-    experiment_content: row.experiment_content || '',
+  // 先设置基本信息
+  form.experiment_id = row.experiment_id
+  form.batch_id = row.batch_id
+  form.experiment_content = row.experiment_content || ''
+  
+  // 使用nextTick确保batch_id设置完成后再设置member_ids，避免被watch清空
+  nextTick(() => {
     // 从members数组中提取person_id作为member_ids
-    member_ids: row.members ? row.members.map(member => member.person_id) : (row.member_ids || [])
+    form.member_ids = row.members ? row.members.map(member => member.person_id) : (row.member_ids || [])
   })
 }
 

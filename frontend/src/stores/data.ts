@@ -292,10 +292,15 @@ export const useDataStore = defineStore('data', () => {
   const updatePerson = async (id: number, person: Partial<Person>) => {
     try {
       const updatedPerson = await ApiService.updatePerson(id, person)
-      const index = persons.value.findIndex(p => p.person_id === id)
-      if (index !== -1) {
-        persons.value[index] = updatedPerson
-      }
+      
+      // 重新加载完整的人员数据以确保batch_number等关联字段正确显示
+      const freshPersonsData = await ApiService.getPersons()
+      persons.value = freshPersonsData
+      
+      // 更新缓存状态
+      dataLoaded.value.persons = true
+      lastLoadTime.value.persons = Date.now()
+      
       return updatedPerson
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新人员失败'

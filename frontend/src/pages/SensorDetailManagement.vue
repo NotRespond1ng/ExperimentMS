@@ -201,6 +201,7 @@
                   style="width: 100%"
                   format="YYYY-MM-DD"
                   value-format="YYYY-MM-DD"
+                  :locale="zhCn"
                 />
               </el-form-item>
             </el-col>
@@ -370,6 +371,7 @@
                     style="width: 100%"
                     format="YYYY-MM-DD"
                     value-format="YYYY-MM-DD"
+                    :locale="zhCn"
                   />
                 </el-form-item>
               </el-col>
@@ -492,6 +494,7 @@ import { useAuthStore } from '../stores/auth'
 import { usePagination } from '../composables/usePagination'
 import { formatDate } from '../utils/formatters'
 import { exportToExcel, importFromExcel, validateSensorDetailDataByPosition } from '../utils/excel'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 // 自定义日期格式化函数，将日期格式化为 YYYY.MM.DD 格式
 const formatDateToDots = (date: string | Date): string => {

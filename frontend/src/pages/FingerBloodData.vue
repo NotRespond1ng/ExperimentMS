@@ -46,6 +46,7 @@
           end-placeholder="结束时间"
           format="YYYY-MM-DD HH:mm:ss"
           value-format="YYYY-MM-DD HH:mm:ss"
+          :locale="zhCn"
           style="width: 280px"
           @change="handleFilter"
         />
@@ -233,6 +234,7 @@
             style="width: 100%"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss"
+            :locale="zhCn"
           />
         </el-form-item>
         
@@ -336,6 +338,7 @@
                     style="width: 100%"
                     format="YYYY-MM-DD HH:mm:ss"
                     value-format="YYYY-MM-DD HH:mm:ss"
+                    :locale="zhCn"
                   />
                 </el-form-item>
 
@@ -407,6 +410,7 @@ import { useDataStore, type FingerBloodData } from '../stores/data'
 import { useAuthStore } from '../stores/auth'
 import { ApiService } from '../services/api'
 import { usePagination } from '@/composables/usePagination'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 import { getBatchNumber, getPersonName, formatDateTime } from '@/utils/formatters'
 import { exportToExcel, exportMultipleSheetsToExcel } from '@/utils/excel'

@@ -230,7 +230,7 @@
     <el-dialog
       v-model="renameDialogVisible"
       title="重命名文件"
-      width="500px"
+      width="700px"
       @close="resetRenameForm"
     >
       <el-form
@@ -253,6 +253,9 @@
             placeholder="请输入新的文件名"
             style="width: 100%"
           />
+          <div class="form-tip" v-if="currentFileExtension">
+            文件扩展名：{{ currentFileExtension }}（将自动添加）
+          </div>
         </el-form-item>
       </el-form>
       
@@ -319,6 +322,7 @@ const renameFormRef = ref<FormInstance>()
 const uploadRef = ref()
 const fileList = ref<UploadFile[]>()
 const currentFileName = ref('')
+const currentFileExtension = ref('')
 const currentFileId = ref<number | null>(null)
 
 // 筛选相关
@@ -574,8 +578,23 @@ const handleDownload = async (row: CompetitorFile) => {
 // 重命名文件
 const handleRename = (row: CompetitorFile) => {
   currentFileId.value = row.competitor_file_id
-  currentFileName.value = getFileName(row)
-  renameForm.newFileName = currentFileName.value
+  const fullFileName = getFileName(row)
+  currentFileName.value = fullFileName
+  
+  // 提取文件名和扩展名
+  const lastDotIndex = fullFileName.lastIndexOf('.')
+  if (lastDotIndex > 0) {
+    // 有扩展名的情况
+    const nameWithoutExt = fullFileName.substring(0, lastDotIndex)
+    const extension = fullFileName.substring(lastDotIndex)
+    currentFileExtension.value = extension
+    renameForm.newFileName = nameWithoutExt
+  } else {
+    // 没有扩展名的情况
+    currentFileExtension.value = ''
+    renameForm.newFileName = fullFileName
+  }
+  
   renameDialogVisible.value = true
 }
 
@@ -588,8 +607,11 @@ const handleSubmitRename = async () => {
       renaming.value = true
       
       try {
+        // 拼接完整的文件名（文件名 + 扩展名）
+        const fullNewFileName = renameForm.newFileName + currentFileExtension.value
+        
         // 调用API重命名文件
-        const result = await ApiService.renameCompetitorFile(currentFileId.value, renameForm.newFileName)
+        const result = await ApiService.renameCompetitorFile(currentFileId.value, fullNewFileName)
         
         // 更新本地数据
         const fileIndex = dataStore.competitorFiles.findIndex(f => f.competitor_file_id === currentFileId.value)
@@ -711,6 +733,7 @@ const resetRenameForm = () => {
     newFileName: ''
   })
   currentFileName.value = ''
+  currentFileExtension.value = ''
   currentFileId.value = null
 }
 </script>
@@ -776,6 +799,13 @@ const resetRenameForm = () => {
 
 .file-icon {
   color: #409EFF;
+}
+
+.form-tip {
+  margin-top: 4px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .dialog-footer {

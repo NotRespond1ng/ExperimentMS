@@ -324,7 +324,12 @@ const groupedWearRecords = computed(() => {
     }
   })
   
-  return Array.from(grouped.values())
+  // 按照最新佩戴时间倒序排列，新增的记录显示在最前面
+  return Array.from(grouped.values()).sort((a, b) => {
+    const timeA = a.latest_wear_time || a.earliest_wear_time || ''
+    const timeB = b.latest_wear_time || b.earliest_wear_time || ''
+    return timeB.localeCompare(timeA) // 倒序排列
+  })
 })
 
 // 对话框状态
@@ -828,7 +833,9 @@ onMounted(loadData);
 
 <style scoped>
 .wear-record-management {
-  padding: 20px;
+  padding: 24px;
+  background-color: #f7f8fa;
+  min-height: 100vh;
 }
 
 .page-header {

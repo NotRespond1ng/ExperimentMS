@@ -140,6 +140,7 @@
             style="width: 100%"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss"
+            :locale="zhCn"
           />
         </el-form-item>
         
@@ -151,6 +152,7 @@
             style="width: 100%"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss"
+            :locale="zhCn"
             clearable
           />
         </el-form-item>
@@ -245,6 +247,7 @@ import { exportToExcel } from '../utils/excel'
 import { useDataStore, type Batch } from '../stores/data'
 import { ApiService } from '../services/api'
 import { useAuthStore } from '../stores/auth'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 const dataStore = useDataStore()
 const authStore = useAuthStore()
@@ -415,6 +418,10 @@ const handleAdd = () => {
   isEdit.value = false
   dialogVisible.value = true
   resetForm()
+  // 自动填充当前北京时间到开始时间字段
+  const now = new Date()
+  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)) // UTC+8
+  form.start_time = beijingTime.toISOString().slice(0, 19).replace('T', ' ')
 }
 
 // 添加人员
