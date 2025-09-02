@@ -470,6 +470,11 @@ const removeSensorParam = async (index: number) => {
       // 成功删除后从前端数据中移除
       formData.sensor_parameters.splice(index, 1);
       formData.sensor_detail_ids = formData.sensor_detail_ids.filter((_, i) => i !== index);
+      
+      // 检查是否还有剩余传感器，如果没有则关闭对话框
+      if (formData.sensor_parameters.length === 0) {
+        handleClose();
+      }
     } catch (error) {
       // 删除失败，不从前端移除
       return;
@@ -478,6 +483,11 @@ const removeSensorParam = async (index: number) => {
     // 新建模式或未保存的记录，直接从前端移除
     formData.sensor_parameters.splice(index, 1);
     formData.sensor_detail_ids = formData.sensor_detail_ids.filter((_, i) => i !== index);
+    
+    // 检查是否还有剩余传感器，如果没有则关闭对话框
+    if (formData.sensor_parameters.length === 0) {
+      handleClose();
+    }
   }
 }
 

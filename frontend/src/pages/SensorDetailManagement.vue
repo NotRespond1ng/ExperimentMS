@@ -72,7 +72,9 @@
         style="width: 100%"
         v-loading="loading"
         :row-style="{ height: '55px' }"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column label="序号" width="80" align="center">
           <template #default="{ $index }">
             {{ (currentPage - 1) * pageSize + $index + 1 }}
@@ -132,7 +134,21 @@
             <span v-else class="no-data">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
+          <template #header>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>操作</span>
+              <el-button
+                v-if="selectedRows.length > 0"
+                type="danger"
+                size="small"
+                @click="handleBatchDelete"
+                :disabled="!authStore.hasModulePermission('sensor_details', 'delete')"
+              >
+                批量删除({{ selectedRows.length }})
+              </el-button>
+            </div>
+          </template>
           <template #default="{ row }">
             <el-button
               :disabled="!authStore.hasModulePermission('sensor_details', 'write')"
@@ -520,6 +536,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const sensorDetails = ref<SensorDetail[]>([])
 const searchKeyword = ref('')
+const selectedRows = ref<SensorDetail[]>([])
 
 // 筛选后的数据
 const filteredSensorDetails = computed(() => {
@@ -686,6 +703,42 @@ const handleDelete = async (row: SensorDetail) => {
     if (error !== 'cancel') {
       console.error('删除传感器详细信息失败:', error)
       ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleSelectionChange = (selection: SensorDetail[]) => {
+  selectedRows.value = selection
+}
+
+const handleBatchDelete = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的传感器记录')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 <strong>${selectedRows.value.length}</strong> 条传感器记录吗？此操作不可撤销。`,
+      '确认批量删除',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true,
+      }
+    )
+
+    const ids = selectedRows.value.map(row => row.sensor_detail_id)
+    const result = await ApiService.batchDeleteSensorDetails(ids)
+    
+    ElMessage.success(`批量删除成功：删除了 ${result.deleted_count} 条记录`)
+    selectedRows.value = []
+    await loadSensorDetails()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('批量删除传感器详细信息失败:', error)
+      ElMessage.error('批量删除失败')
     }
   }
 }

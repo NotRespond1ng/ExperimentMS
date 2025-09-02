@@ -235,6 +235,10 @@ export const useDataStore = defineStore('data', () => {
     try {
       const newBatch = await ApiService.createBatch(batch)
       batches.value.push(newBatch)
+      
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
+      
       return newBatch
     } catch (err: any) {
       // 提取后端返回的具体错误信息
@@ -251,6 +255,10 @@ export const useDataStore = defineStore('data', () => {
       if (index !== -1) {
         batches.value[index] = updatedBatch
       }
+      
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
+      
       return updatedBatch
     } catch (err: any) {
       // 提取后端返回的具体错误信息
@@ -267,6 +275,10 @@ export const useDataStore = defineStore('data', () => {
       if (index !== -1) {
         batches.value.splice(index, 1)
       }
+      
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
+      
     } catch (err) {
       error.value = err instanceof Error ? err.message : '删除批次失败'
       throw err
@@ -281,6 +293,9 @@ export const useDataStore = defineStore('data', () => {
       
       // 添加人员后，重新加载批次数据以更新 person_count
       batches.value = await ApiService.getBatches()
+      
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
       
       return newPerson
     } catch (err) {
@@ -301,6 +316,9 @@ export const useDataStore = defineStore('data', () => {
       dataLoaded.value.persons = true
       lastLoadTime.value.persons = Date.now()
       
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
+      
       return updatedPerson
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新人员失败'
@@ -318,6 +336,9 @@ export const useDataStore = defineStore('data', () => {
       
       // 删除人员后，同样重新加载批次数据
       batches.value = await ApiService.getBatches()
+      
+      // 强制刷新传感器数据，确保其他模块获取最新状态
+      await loadSensors(true)
       
     } catch (err: any) {
       // 保留原始错误信息，让前端组件处理详细的错误显示

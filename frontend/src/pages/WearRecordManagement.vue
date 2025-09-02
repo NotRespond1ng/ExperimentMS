@@ -690,6 +690,12 @@ const removeSensorFromEdit = async (wearRecordId: number) => {
       form.value.sensor_params.splice(index, 1);
       form.value.sensor_detail_ids.splice(index, 1);
     }
+    
+    // 检查是否还有剩余传感器，如果没有则关闭对话框
+    if (form.value.sensor_params.length === 0) {
+      dialogVisible.value = false;
+    }
+    
     await loadData();
   } catch (error) {
     if (error !== 'cancel') ElMessage.error('删除传感器失败');

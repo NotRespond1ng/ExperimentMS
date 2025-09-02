@@ -330,6 +330,11 @@ export class ApiService {
     await api.delete(`/api/fingerBloodData/${id}`)
   }
 
+  static async batchDeleteFingerBloodData(ids: number[]): Promise<{ deleted_count: number }> {
+    const response = await api.post('/api/fingerBloodData/batch-delete', { ids })
+    return response.data
+  }
+
   static async exportFingerBloodData(params?: {
     batch_id?: number;
     person_id?: number;
@@ -386,6 +391,11 @@ export class ApiService {
 
   static async deleteSensorDetail(id: number): Promise<void> {
     await api.delete(`/api/sensorDetails/${id}`)
+  }
+
+  static async batchDeleteSensorDetails(ids: number[]): Promise<{ deleted_count: number }> {
+    const response = await api.post('/api/sensorDetails/batch-delete', { ids })
+    return response.data
   }
 
   // 佩戴记录管理

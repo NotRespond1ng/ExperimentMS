@@ -960,7 +960,16 @@ const handleDelete = async (row: Sensor) => {
     await dataStore.deleteSensor(row.sensor_id)
     ElMessage.success('删除成功')
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (error !== 'cancel') {
+      // 检查是否是HTTP错误响应
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as any
+        const errorMessage = errorResponse.response?.data?.detail || '删除失败'
+        ElMessage.error(errorMessage)
+      } else {
+        ElMessage.error('删除失败')
+      }
+    }
   }
 }
 

@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, onActivated, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Search, Plus, Download, Delete } from '@element-plus/icons-vue'
 import { usePagination } from '../composables/usePagination'
@@ -277,14 +277,28 @@ const handleVisibilityChange = async () => {
 onMounted(async () => {
   try {
     loading.value = true
-    // 使用缓存机制加载批次数据
-    await dataStore.loadBatches()
+    // 强制刷新批次数据，确保每次进入页面都获取最新信息
+    await dataStore.loadBatches(true)
     
     // 添加页面可见性监听
     document.addEventListener('visibilitychange', handleVisibilityChange)
   } catch (error) {
     console.error('Failed to load batches:', error)
     ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
+  }
+})
+
+// 组件激活时刷新数据
+onActivated(async () => {
+  try {
+    loading.value = true
+    // 强制刷新批次数据
+    await dataStore.loadBatches(true)
+  } catch (error) {
+    console.error('Failed to refresh batches on activation:', error)
+    ElMessage.error('刷新数据失败')
   } finally {
     loading.value = false
   }
