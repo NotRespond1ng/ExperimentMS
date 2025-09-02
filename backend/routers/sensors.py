@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from models import Sensor, Batch, Person, User
+from models import Sensor, Batch, Person, User, WearRecord
 from schemas import SensorCreate, SensorUpdate, SensorResponse, MessageResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -189,6 +189,14 @@ def delete_sensor(
     db_sensor = db.query(Sensor).filter(Sensor.sensor_id == sensor_id).first()
     if not db_sensor:
         raise HTTPException(status_code=404, detail="传感器不存在")
+    
+    # 检查是否存在关联的佩戴记录
+    wear_record = db.query(WearRecord).filter(WearRecord.sensor_id == sensor_id).first()
+    if wear_record:
+        raise HTTPException(
+            status_code=400, 
+            detail="该传感器已有佩戴记录，无法删除。请先删除相关的佩戴记录后再尝试删除传感器。"
+        )
     
     db.delete(db_sensor)
     db.commit()

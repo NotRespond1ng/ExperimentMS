@@ -9,7 +9,7 @@ import os
 
 from database import get_db
 from models import FingerBloodFile, Batch, Person, User
-from schemas import FingerBloodDataResponse, FingerBloodDataCreate, FingerBloodDataUpdate, MessageResponse
+from schemas import FingerBloodDataResponse, FingerBloodDataCreate, FingerBloodDataUpdate, MessageResponse, BatchDeleteRequest
 from routers.activities import log_activity
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -233,3 +233,32 @@ def export_finger_blood_data(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
+
+@router.post("/batch-delete")
+def batch_delete_finger_blood_data(
+    request: BatchDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.FINGER_BLOOD_DATA, "delete"))
+):
+    """批量删除指尖血数据"""
+    if not request.ids:
+        raise HTTPException(status_code=400, detail="请提供要删除的数据ID列表")
+    
+    # 查询要删除的数据
+    data_to_delete = db.query(FingerBloodFile).filter(FingerBloodFile.finger_blood_file_id.in_(request.ids)).all()
+    
+    if not data_to_delete:
+        raise HTTPException(status_code=404, detail="未找到要删除的数据")
+    
+    deleted_count = len(data_to_delete)
+    
+    # 执行批量删除
+    for data in data_to_delete:
+        db.delete(data)
+    
+    db.commit()
+    
+    # 记录活动日志
+    log_activity(db, "批量删除指尖血数据", f"批量删除了{deleted_count}条指尖血数据", current_user.user_id)
+    
+    return {"deleted_count": deleted_count, "message": f"成功删除{deleted_count}条指尖血数据"}

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
 from models import SensorDetail, User
-from schemas import SensorDetailCreate, SensorDetailUpdate, SensorDetailResponse, MessageResponse
+from schemas import SensorDetailCreate, SensorDetailUpdate, SensorDetailResponse, MessageResponse, BatchDeleteRequest
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
 
@@ -187,3 +187,29 @@ def delete_sensor_detail(
     db.delete(db_sensor_detail)
     db.commit()
     return MessageResponse(message="传感器详细信息记录删除成功")
+
+@router.post("/batch-delete")
+def batch_delete_sensor_details(
+    request: BatchDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.SENSOR_DETAILS, "delete"))
+):
+    """批量删除传感器详细信息"""
+    if not request.ids:
+        raise HTTPException(status_code=400, detail="请提供要删除的数据ID列表")
+    
+    # 查询要删除的数据
+    details_to_delete = db.query(SensorDetail).filter(SensorDetail.sensor_detail_id.in_(request.ids)).all()
+    
+    if not details_to_delete:
+        raise HTTPException(status_code=404, detail="未找到要删除的数据")
+    
+    deleted_count = len(details_to_delete)
+    
+    # 执行批量删除
+    for detail in details_to_delete:
+        db.delete(detail)
+    
+    db.commit()
+    
+    return {"deleted_count": deleted_count, "message": f"成功删除{deleted_count}条传感器详细信息记录"}

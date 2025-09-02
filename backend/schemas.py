@@ -338,3 +338,7 @@ class ExperimentDataSummary(BaseModel):
 class UploadResponse(BaseModel):
     message: str
     processed_rows: int
+
+# 批量删除请求模式
+class BatchDeleteRequest(BaseModel):
+    ids: List[int]
