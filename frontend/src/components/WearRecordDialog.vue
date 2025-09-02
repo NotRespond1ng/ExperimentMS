@@ -405,7 +405,8 @@ const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
         transmitter_id: existingParam.transmitter_id || relatedSensor?.transmitter_id || '',
         wear_position: existingParam.wear_position || '',
         abnormal_situation: existingParam.abnormal_situation || '',
-        reason_analysis: existingParam.reason_analysis || ''
+        reason_analysis: existingParam.reason_analysis || '',
+        wear_end_time: existingParam.wear_end_time || wearEndTime
       }
     }
   }

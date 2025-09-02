@@ -214,65 +214,71 @@
           :rules="rules"
           label-position="top"
         >
-        <el-form-item label="关联实验批次" prop="batch_id">
-          <el-select
-            v-model="form.batch_id"
-            placeholder="请选择实验批次"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="batch in dataStore.batches"
-              :key="batch.batch_id"
-              :label="`${batch.batch_number} (${batch.start_time})`"
-              :value="batch.batch_id"
+        <!-- 第一行：关联实验批次和关联人员 -->
+        <div class="form-row">
+          <el-form-item label="关联实验批次" prop="batch_id" class="form-col">
+            <el-select
+              v-model="form.batch_id"
+              placeholder="请选择实验批次"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="batch in dataStore.batches"
+                :key="batch.batch_id"
+                :label="`${batch.batch_number} (${batch.start_time})`"
+                :value="batch.batch_id"
+              />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="关联人员" prop="person_id" class="form-col">
+            <el-select
+              v-model="form.person_id"
+              placeholder="请选择人员"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="person in filteredPersonsForForm"
+                :key="person.person_id"
+                :label="`${person.person_name} (ID: ${person.person_id})`"
+                :value="person.person_id"
+              />
+            </el-select>
+            <div class="form-tip">
+              {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
+            </div>
+          </el-form-item>
+        </div>
+        
+        <!-- 第二行：采集时间和血糖值 -->
+        <div class="form-row">
+          <el-form-item label="采集时间" prop="collection_time" class="form-col">
+            <el-date-picker
+              v-model="form.collection_time"
+              type="datetime"
+              placeholder="选择采集时间"
+              style="width: 100%"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              :locale="zhCn"
             />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item label="关联人员" prop="person_id">
-          <el-select
-            v-model="form.person_id"
-            placeholder="请选择人员"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="person in filteredPersonsForForm"
-              :key="person.person_id"
-              :label="`${person.person_name} (ID: ${person.person_id})`"
-              :value="person.person_id"
+          </el-form-item>
+          
+          <el-form-item label="血糖值(mmol/L)" prop="blood_glucose_value" class="form-col">
+            <el-input-number
+              v-model="form.blood_glucose_value"
+              :min="0"
+              :max="30"
+              :precision="1"
+              :step="0.1"
+              placeholder="请输入血糖值"
+              style="width: 100%"
             />
-          </el-select>
-          <div class="form-tip">
-            {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
-          </div>
-        </el-form-item>
-        
-        <el-form-item label="采集时间" prop="collection_time">
-          <el-date-picker
-            v-model="form.collection_time"
-            type="datetime"
-            placeholder="选择采集时间"
-            style="width: 100%"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            :locale="zhCn"
-          />
-        </el-form-item>
-        
-        <el-form-item label="血糖值(mmol/L)" prop="blood_glucose_value">
-          <el-input-number
-            v-model="form.blood_glucose_value"
-            :min="0"
-            :max="30"
-            :precision="1"
-            :step="0.1"
-            placeholder="请输入血糖值"
-            style="width: 100%"
-          />
-          <div class="glucose-hint">
-            正常范围：3.9-6.1 mmol/L（空腹）
-          </div>
-        </el-form-item>
+            <div class="glucose-hint">
+              正常范围：3.9-6.1 mmol/L（空腹）
+            </div>
+          </el-form-item>
+        </div>
         </el-form>
       </div>
       
@@ -296,46 +302,48 @@
         ref="batchFormRef"
         :model="batchForm"
         :rules="batchRules"
-        label-width="120px"
-        label-position="left"
+        label-position="top"
       >
-        <el-form-item label="关联实验批次" prop="batch_id">
-          <el-select
-            v-model="batchForm.batch_id"
-            placeholder="请选择实验批次"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="batch in dataStore.batches"
-              :key="batch.batch_id"
-              :label="`${batch.batch_number} (${batch.start_time})`"
-              :value="batch.batch_id"
-            />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item label="关联人员" prop="person_id">
-          <el-select
-            v-model="batchForm.person_id"
-            placeholder="请选择人员"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="person in filteredPersonsForBatchForm"
-              :key="person.person_id"
-              :label="`${person.person_name} (ID: ${person.person_id})`"
-              :value="person.person_id"
-            />
-          </el-select>
-          <div class="form-tip">
-            {{ batchForm.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
-          </div>
-        </el-form-item>
+        <!-- 批量录入表单第一行：关联实验批次和关联人员 -->
+        <div class="form-row">
+          <el-form-item label="关联实验批次" prop="batch_id" class="form-col">
+            <el-select
+              v-model="batchForm.batch_id"
+              placeholder="请选择实验批次"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="batch in dataStore.batches"
+                :key="batch.batch_id"
+                :label="`${batch.batch_number} (${batch.start_time})`"
+                :value="batch.batch_id"
+              />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="关联人员" prop="person_id" class="form-col">
+            <el-select
+              v-model="batchForm.person_id"
+              placeholder="请选择人员"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="person in filteredPersonsForBatchForm"
+                :key="person.person_id"
+                :label="`${person.person_name} (ID: ${person.person_id})`"
+                :value="person.person_id"
+              />
+            </el-select>
+            <div class="form-tip">
+              {{ batchForm.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
+            </div>
+          </el-form-item>
+        </div>
 
         <div class="data-section">
           <div class="section-header">
             <h4>血糖数据</h4>
-            <el-button type="primary" size="small" @click="addDataItem">
+            <el-button type="primary" size="medium" @click="addDataItem">
               <el-icon><Plus /></el-icon>
               添加数据
             </el-button>
@@ -347,39 +355,44 @@
 
           <div v-for="(dataItem, index) in batchForm.dataList" :key="index" class="data-item">
             <el-card class="data-card" shadow="never">
-              <div class="data-form">
-                <el-form-item
-                  :prop="`dataList.${index}.collection_time`"
-                  :rules="commonDataRules.collection_time"
-                  label="采集时间"
-                >
-                  <el-date-picker
-                    v-model="dataItem.collection_time"
-                    type="datetime"
-                    placeholder="选择采集时间"
-                    style="width: 100%"
-                    format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    :locale="zhCn"
-                  />
-                </el-form-item>
-
-                <el-form-item
-                  :prop="`dataList.${index}.blood_glucose_value`"
-                  :rules="commonDataRules.blood_glucose_value"
-                  label="血糖值(mmol/L)"
-                >
-                  <el-input-number
-                    v-model="dataItem.blood_glucose_value"
-                    :min="0"
-                    :max="30"
-                    :precision="1"
-                    :step="0.1"
-                    placeholder="请输入血糖值"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-
+              <div class="form-row">
+                <div class="form-col">
+                  <el-form-item
+                    :prop="`dataList.${index}.collection_time`"
+                    :rules="commonDataRules.collection_time"
+                    label="采集时间"
+                  >
+                    <el-date-picker
+                      v-model="dataItem.collection_time"
+                      type="datetime"
+                      placeholder="选择采集时间"
+                      style="width: 100%"
+                      format="YYYY-MM-DD HH:mm:ss"
+                      value-format="YYYY-MM-DD HH:mm:ss"
+                      :locale="zhCn"
+                    />
+                  </el-form-item>
+                </div>
+                
+                <div class="form-col">
+                  <el-form-item
+                    :prop="`dataList.${index}.blood_glucose_value`"
+                    :rules="commonDataRules.blood_glucose_value"
+                    label="血糖值(mmol/L)"
+                  >
+                    <el-input-number
+                      v-model="dataItem.blood_glucose_value"
+                      :min="0"
+                      :max="30"
+                      :precision="1"
+                      :step="0.1"
+                      placeholder="请输入血糖值"
+                      style="width: 100%"
+                    />
+                    <div class="glucose-hint">正常范围：3.9-6.1 mmol/L（空腹）</div>
+                  </el-form-item>
+                </div>
+                
                 <div class="data-actions">
                   <el-button
                     type="danger"
@@ -710,10 +723,20 @@ const getGlucoseLevel = (value: number) => {
 const handleFilter = () => resetPagination()
 const toggleChartView = () => showChart.value = !showChart.value
 
+// 获取当前北京时间
+const getCurrentBeijingTime = () => {
+  const now = new Date()
+  // 北京时间是UTC+8
+  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000))
+  return beijingTime.toISOString().slice(0, 19).replace('T', ' ')
+}
+
 // 新建/编辑/删除操作
 const handleAdd = () => {
   isEdit.value = false
   resetForm()
+  // 自动填充当前北京时间
+  form.collection_time = getCurrentBeijingTime()
   dialogVisible.value = true
 }
 
@@ -1121,6 +1144,27 @@ const handleExport = () => {
   background-color: #fafafa;
   border-bottom: 1px solid #e4e7ed;
   padding: 16px 20px;
+}
+
+/* 表单行布局样式 */
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.form-col {
+  flex: 1;
+  margin-bottom: 18px;
+}
+
+/* 确保表单项在行布局中正确显示 */
+:deep(.form-row .el-form-item) {
+  margin-bottom: 18px;
+}
+
+:deep(.form-row .el-form-item:last-child) {
+  margin-bottom: 18px;
 }
 </style>
 

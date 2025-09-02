@@ -114,7 +114,7 @@
         </el-table-column>
         <el-table-column label="批次" width="150">
           <template #default="{ row }">
-            <el-tag type="primary" size="small">
+            <el-tag type="primary" size="large">
               {{ row.batch_number }}
             </el-tag>
           </template>
