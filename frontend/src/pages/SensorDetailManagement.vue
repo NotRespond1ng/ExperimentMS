@@ -718,15 +718,15 @@ const resetForm = () => {
 
 const handleExport = () => {
   const exportData = sensorDetails.value.map(item => ({
+    '灭菌日期': item.sterilization_date ? formatDateToDots(item.sterilization_date) : '',
     '传感器测试编号': item.test_number,
     '探针编号': item.probe_number,
-    '灭菌日期': item.sterilization_date ? formatDateToDots(item.sterilization_date) : '',
-    '0.00': (item.value_0 !== null && item.value_0 !== undefined) ? item.value_0.toFixed(2) : '',
-    '2.00': (item.value_2 !== null && item.value_2 !== undefined) ? item.value_2.toFixed(2) : '',
-    '5.00': (item.value_5 !== null && item.value_5 !== undefined) ? item.value_5.toFixed(2) : '',
-    '25.00': (item.value_25 !== null && item.value_25 !== undefined) ? item.value_25.toFixed(2) : '',
-    '初始灵敏度': (item.sensitivity !== null && item.sensitivity !== undefined) ? item.sensitivity.toFixed(2) : '',
-    'R': (item.r_value !== null && item.r_value !== undefined) ? item.r_value.toFixed(4) : '',
+    '0.00': (item.value_0 !== null && item.value_0 !== undefined) ? Number(item.value_0) : '',
+    '2.00': (item.value_2 !== null && item.value_2 !== undefined) ? Number(item.value_2) : '',
+    '5.00': (item.value_5 !== null && item.value_5 !== undefined) ? Number(item.value_5) : '',
+    '25.00': (item.value_25 !== null && item.value_25 !== undefined) ? Number(item.value_25) : '',
+    '初始灵敏度': (item.sensitivity !== null && item.sensitivity !== undefined) ? Number(item.sensitivity) : '',
+    'R': (item.r_value !== null && item.r_value !== undefined) ? Number(item.r_value) : '',
     '去向': item.destination || '',
     '备注': item.remarks || ''
   }))

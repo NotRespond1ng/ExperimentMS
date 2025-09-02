@@ -20,6 +20,32 @@ export function exportToExcel(
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(data)
     
+    // 定义数值列名称（需要保持数值格式的列）
+    const numericColumns = ['0.00', '2.00', '5.00', '25.00', '初始灵敏度', 'R']
+    
+    // 设置单元格格式，确保数值列保持数值格式
+    if (data.length > 0) {
+      const headers = Object.keys(data[0])
+      headers.forEach((header, colIndex) => {
+        if (numericColumns.includes(header)) {
+          // 为数值列设置数值格式
+          data.forEach((row, rowIndex) => {
+            const cellAddress = XLSX.utils.encode_cell({ r: rowIndex + 1, c: colIndex })
+            if (ws[cellAddress] && typeof row[header] === 'number') {
+              ws[cellAddress].t = 'n' // 设置单元格类型为数值
+              ws[cellAddress].v = row[header] // 确保值为数字
+              // 设置数值格式
+              if (header === 'R') {
+                ws[cellAddress].z = '0.0000' // R值保留4位小数
+              } else {
+                ws[cellAddress].z = '0.00' // 其他数值保留2位小数
+              }
+            }
+          })
+        }
+      })
+    }
+    
     // 设置列宽
     let colWidths: any[]
     let sheetName: string
@@ -244,10 +270,24 @@ export function validateSensorDetailDataByPosition(data: any[][]): {
         if (datePattern.test(value)) {
           // 将 "YYYY.MM.DD" 或 "YYYY/MM/DD" 格式转换为 "YYYY-MM-DD" 格式
           value = value.replace(/[.\/]/g, '-')
+          
+          // 对日期进行补零处理，确保格式为 YYYY-MM-DD
+          const dateParts = value.split('-')
+          if (dateParts.length === 3) {
+            const year = dateParts[0]
+            const month = dateParts[1].padStart(2, '0')
+            const day = dateParts[2].padStart(2, '0')
+            value = `${year}-${month}-${day}`
+          }
         } else {
           // 对于无效的日期格式（如 "B070905"），设置为 null
           value = null
         }
+      }
+      
+      // 处理字符串字段强制转换
+      if (['probe_number', 'destination', 'remarks', 'test_number'].includes(column.field) && value !== null && value !== undefined) {
+        value = String(value)
       }
       
       // 验证R值范围
