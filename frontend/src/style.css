@@ -8,6 +8,8 @@
     Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
   line-height: 1.5;
   font-weight: 400;
+  font-size: 30px; /* 默认字体大小调整为16px */
+
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

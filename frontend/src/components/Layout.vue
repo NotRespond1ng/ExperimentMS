@@ -38,13 +38,7 @@
             <template #title>人员管理</template>
           </el-menu-item>
           
-          <el-menu-item 
-            v-if="hasPermission('experiment_management')"
-            index="/experiments"
-          >
-            <el-icon><DataAnalysis /></el-icon>
-            <template #title>实验管理</template>
-          </el-menu-item>
+
           
           <el-menu-item 
             v-if="hasPermission('competitor_data')"
@@ -61,16 +55,6 @@
             <el-icon><TrendCharts /></el-icon>
             <template #title>指尖血数据</template>
           </el-menu-item>
-          
-          <el-menu-item 
-            v-if="hasPermission('experiment_data_analysis')"
-            index="/experimentDataAnalysis"
-          >
-            <el-icon><DataBoard /></el-icon>
-            <template #title>实验数据分析</template>
-          </el-menu-item>
-          
-
           
           <el-menu-item 
             v-if="hasPermission('sensor_details')"
@@ -103,6 +87,23 @@
             <el-icon><UserFilled /></el-icon>
             <template #title>用户管理</template>
           </el-menu-item>
+
+                    <el-menu-item 
+            v-if="hasPermission('experiment_management')"
+            index="/experiments"
+          >
+            <el-icon><DataAnalysis /></el-icon>
+            <template #title>实验管理(开发中)</template>
+          </el-menu-item>
+
+          <el-menu-item 
+            v-if="hasPermission('experiment_data_analysis')"
+            index="/experimentDataAnalysis"
+          >
+            <el-icon><DataBoard /></el-icon>
+            <template #title>实验数据分析(开发中)</template>
+          </el-menu-item>
+
         </el-menu>
       </el-aside>
       

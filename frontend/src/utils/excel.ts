@@ -233,7 +233,7 @@ export function validateSensorDetailDataByPosition(data: any[][]): {
   data.forEach((row, rowIndex) => {
     const errors: string[] = []
     const normalizedRow: any = {
-      _rowIndex: rowIndex + 2 // +2 因为Excel行号从1开始，且第一行是表头
+      _rowIndex: rowIndex + 2 // +2 因为rowIndex从0开始，Excel行号从1开始，且第一行是表头
     }
     
     // 按列位置处理数据

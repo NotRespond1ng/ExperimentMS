@@ -50,6 +50,21 @@ def get_sensor_details(
     
     return result
 
+@router.get("/used-sensor-details", response_model=List[int])
+def get_used_sensor_details(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.SENSOR_DETAILS, "read"))
+):
+    """获取已分配的传感器详细信息ID列表"""
+    # 查询所有已分配的传感器详细信息ID（即在sensors表中被引用的sensor_detail_id）
+    used_sensor_detail_ids = db.query(Sensor.sensor_detail_id).filter(
+        Sensor.sensor_detail_id.isnot(None)
+    ).distinct().all()
+    
+    # 提取ID列表
+    result = [id_tuple[0] for id_tuple in used_sensor_detail_ids]
+    return result
+
 @router.post("/", response_model=SensorDetailResponse)
 def create_sensor_detail(
     sensor_detail: SensorDetailCreate,

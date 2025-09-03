@@ -20,6 +20,18 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+        <el-select
+          v-model="assignmentFilter"
+          placeholder="筛选分配状态"
+          style="width: 150px; margin-right: 12px"
+          clearable
+          @change="handleSearch"
+          size="large"
+        >
+          <el-option label="全部" value="" />
+          <el-option label="已分配" value="assigned" />
+          <el-option label="未分配" value="unassigned" />
+        </el-select>
       </div>
       
       <div class="toolbar-right">
@@ -62,7 +74,7 @@
       <template #header>
         <div class="card-header">
           <span>传感器详细信息列表</span>
-          <span class="data-count">共 {{ filteredSensorDetails.length }} 条记录</span>
+          <span class="data-count">共 <span class="highlight-number">{{ filteredSensorDetails.length }}</span> 条记录，剩余库存 <span class="highlight-number">{{ remainingStock }}</span> 条</span>
         </div>
       </template>
       
@@ -72,6 +84,7 @@
         style="width: 100%"
         v-loading="loading"
         :row-style="{ height: '55px' }"
+        :row-class-name="getRowClassName"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
@@ -87,7 +100,16 @@
             {{ row.sterilization_date ? formatDateToDots(row.sterilization_date) : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="test_number" label="传感器测试编号" width="160" />
+        <el-table-column prop="test_number" label="传感器测试编号" width="160">
+          <template #default="{ row }">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>{{ row.test_number }}</span>
+              <el-tag v-if="isUsedSensorDetail(row.sensor_detail_id)" type="warning" size="small">
+                已分配
+              </el-tag>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="probe_number" label="探针编号" width="140" />
         <el-table-column prop="value_0" label="0.00" width="100">
           <template #default="{ row }">
@@ -535,13 +557,16 @@ const authStore = useAuthStore()
 // 数据状态
 const loading = ref(false)
 const sensorDetails = ref<SensorDetail[]>([])
+const usedSensorDetailIds = ref<number[]>([])
 const searchKeyword = ref('')
+const assignmentFilter = ref('')
 const selectedRows = ref<SensorDetail[]>([])
 
 // 筛选后的数据
 const filteredSensorDetails = computed(() => {
   let result = sensorDetails.value
   
+  // 搜索关键词筛选
   if (searchKeyword.value && searchKeyword.value.trim() !== '') {
     const keyword = searchKeyword.value.trim().toLowerCase()
     result = result.filter(item => 
@@ -550,8 +575,32 @@ const filteredSensorDetails = computed(() => {
     )
   }
   
+  // 分配状态筛选
+  if (assignmentFilter.value) {
+    if (assignmentFilter.value === 'assigned') {
+      result = result.filter(item => isUsedSensorDetail(item.sensor_detail_id))
+    } else if (assignmentFilter.value === 'unassigned') {
+      result = result.filter(item => !isUsedSensorDetail(item.sensor_detail_id))
+    }
+  }
+  
   return result.sort((a, b) => b.sensor_detail_id - a.sensor_detail_id);
 })
+
+// 剩余库存数量
+const remainingStock = computed(() => {
+  return sensorDetails.value.length - usedSensorDetailIds.value.length
+})
+
+// 检查传感器详细信息是否已分配
+const isUsedSensorDetail = (sensorDetailId: number) => {
+  return usedSensorDetailIds.value.includes(sensorDetailId)
+}
+
+// 获取表格行的样式类名
+const getRowClassName = ({ row }: { row: SensorDetail }) => {
+  return isUsedSensorDetail(row.sensor_detail_id) ? 'used-sensor-row' : ''
+}
 
 // 对话框状态
 const dialogVisible = ref(false)
@@ -608,7 +657,12 @@ const {
 const loadSensorDetails = async () => {
   try {
     loading.value = true
-    sensorDetails.value = await ApiService.getSensorDetails()
+    const [sensorDetailsData, usedIds] = await Promise.all([
+      ApiService.getSensorDetails(),
+      ApiService.getUsedSensorDetails()
+    ])
+    sensorDetails.value = sensorDetailsData
+    usedSensorDetailIds.value = usedIds
   } catch (error) {
     console.error('加载传感器详细信息失败:', error)
     ElMessage.error('加载传感器详细信息失败')
@@ -891,8 +945,23 @@ const handleImportExcel = () => {
         return
       }
       
-      // 验证数据（使用列位置验证）
-      const { valid, invalid } = validateSensorDetailDataByPosition(rawData)
+      // [新增] 数据预处理：过滤掉在A-K列（前11列）完全为空的行
+      const filteredData = rawData.filter(row => {
+        // 检查前11列（A到K列，对应传感器详细信息的有效列）
+        const validColumns = row.slice(0, 11)
+        const hasValidData = validColumns.some(cell => 
+          cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== ''
+        )
+        return hasValidData
+      })
+      
+      if (filteredData.length === 0) {
+        ElMessage.warning('Excel文件中没有有效的传感器详细信息数据')
+        return
+      }
+      
+      // 验证数据（使用过滤后的数据）
+      const { valid, invalid } = validateSensorDetailDataByPosition(filteredData)
       
       if (invalid.length > 0) {
         // 显示验证错误
@@ -981,7 +1050,7 @@ const handleImportExcel = () => {
 
 const getRValueType = (rValue?: number) => {
   if (rValue === null || typeof rValue === 'undefined') return 'info'
-  if (rValue >= 0.999) return 'success'
+  if (rValue > 0.99) return 'success'
   if (rValue >= 0.99) return 'warning'
   return 'danger'
 }
@@ -1053,6 +1122,18 @@ onMounted(() => {
 .data-count {
   color: #86909c;
   font-size: 14px;
+}
+
+.highlight-number {
+  color: #1677ff;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+  display: inline-block;
+  margin: 0 2px;
 }
 
 .destination-text,
@@ -1178,5 +1259,18 @@ onMounted(() => {
   padding: 0 10px;
   height: 28px;
   line-height: 26px;
+}
+
+/* 已分配传感器行的样式 */
+:deep(.used-sensor-row) {
+  background-color: #fef7e6 !important;
+}
+
+:deep(.used-sensor-row:hover) {
+  background-color: #fef2d6 !important;
+}
+
+:deep(.used-sensor-row td) {
+  background-color: transparent !important;
 }
 </style>

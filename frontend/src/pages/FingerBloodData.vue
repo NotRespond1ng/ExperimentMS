@@ -105,7 +105,7 @@
       <template #header>
         <div class="card-header">
           <span>血糖数据列表</span>
-          <span class="data-count">共 {{ filteredData.length }} 条记录</span>
+          <span class="data-count">共 <span class="highlight-number">{{ filteredData.length }}</span> 条记录</span>
         </div>
       </template>
       
@@ -562,6 +562,7 @@ const getFilteredPersonsByBatch = (batchId: number | undefined) => {
 const availableBatchesForFilter = computed(() => {
   const batchIds = [...new Set(dataStore.fingerBloodData.map(data => data.batch_id))]
   return dataStore.batches.filter(batch => batchIds.includes(batch.batch_id))
+    .sort((a, b) => b.batch_id - a.batch_id)
 })
 
 const availablePersonsForFilter = computed(() => {
@@ -974,6 +975,18 @@ const handleExport = () => {
   font-size: 14px;
   color: #909399;
   font-weight: normal;
+}
+
+.highlight-number {
+  color: #1677ff;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+  display: inline-block;
+  margin: 0 2px;
 }
 
 .chart-container {

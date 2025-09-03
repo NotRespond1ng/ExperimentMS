@@ -28,7 +28,7 @@
           @change="handleFilter"
         >
           <el-option
-            v-for="batch in availableBatches"
+            v-for="batch in sortedBatches"
             :key="batch.batch_id"
             :label="batch.batch_number"
             :value="batch.batch_id.toString()"
@@ -84,7 +84,7 @@
       <template #header>
         <div class="card-header">
           <span>佩戴记录列表</span>
-          <span class="data-count">共 {{ groupedWearRecords.length }} 人员，{{ filteredWearRecords.length }} 条记录</span>
+          <span class="data-count">共 <span class="highlight-number">{{ groupedWearRecords.length }}</span> 条记录，筛选后 <span class="highlight-number">{{ filteredWearRecords.length }}</span> 条传感器佩戴记录</span>
         </div>
       </template>
       
@@ -165,10 +165,11 @@
       v-model:visible="dialogVisible"
       :is-edit="isEdit"
       :edit-data="editData"
-      :batches="batches"
+      :batches="sortedBatches"
       :persons="persons"
       :sensor-details="sensorDetails"
       :sensors="sensors"
+      :used-sensor-ids="usedSensorIds"
       :loading="submitLoading"
       :remove-sensor-from-edit="removeSensorFromEdit"
       @submit="handleDialogSubmit"
@@ -178,7 +179,7 @@
     <!-- 批量添加对话框 -->
     <BatchAddDialog
       v-model:visible="batchDialogVisible"
-      :batches="batches"
+      :batches="sortedBatches"
       :persons="persons"
       :available-sensor-details="sensorDetails"
       :sensors="sensors"
@@ -445,13 +446,38 @@ const {
 const availableBatches = computed(() => {
   // 从传感器管理数据中获取已分配传感器的批次
   const sensorBatchIds = new Set(sensors.value.map(sensor => sensor.batch_id).filter(id => id));
-  return batches.value.filter(batch => sensorBatchIds.has(batch.batch_id));
+  const filteredBatches = batches.value.filter(batch => sensorBatchIds.has(batch.batch_id));
+  // 按批次ID倒序排列，新建的批次显示在前面
+  return [...filteredBatches].sort((a, b) => b.batch_id - a.batch_id);
+});
+
+// 排序后的批次列表（只显示有佩戴记录的批次，新建的在前面）
+const sortedBatches = computed(() => {
+  // 获取有佩戴记录的批次ID
+  const recordBatchIds = new Set(wearRecords.value.map(record => record.batch_id));
+  // 筛选出有佩戴记录的批次，并按batch_id倒序排列
+  return batches.value
+    .filter(batch => recordBatchIds.has(batch.batch_id))
+    .sort((a, b) => b.batch_id - a.batch_id);
 });
 
 const availablePersons = computed(() => {
-  // 从传感器管理数据中获取已分配传感器的人员
-  const sensorPersonIds = new Set(sensors.value.map(sensor => sensor.person_id).filter(id => id));
-  return persons.value.filter(person => sensorPersonIds.has(person.person_id));
+  // 获取有佩戴记录的人员ID
+  let recordPersonIds = new Set(wearRecords.value.map(record => record.person_id));
+  
+  // 如果选择了批次筛选，只显示该批次的人员
+  if (filterBatch.value) {
+    recordPersonIds = new Set(
+      wearRecords.value
+        .filter(record => record.batch_id.toString() === filterBatch.value)
+        .map(record => record.person_id)
+    );
+  }
+  
+  // 筛选出有佩戴记录的人员，并按person_id倒序排列
+  return persons.value
+    .filter(person => recordPersonIds.has(person.person_id))
+    .sort((a, b) => b.person_id - a.person_id);
 });
 
 const filteredPersonsForForm = computed(() => {
@@ -481,12 +507,22 @@ const availableSensorDetails = computed(() => {
 const editModeAvailableSensorDetails = computed(() => {
   if (!isEdit.value || !editData.value?.person_id) return availableSensorDetails.value;
   
-  const currentPersonSensorIds = wearRecords.value
-    .filter(record => record.person_id === editData.value.person_id)
-    .map(record => record.sensor_id);
+  // 获取当前人员正在佩戴的传感器的sensor_detail_id列表
+  const currentPersonSensorDetailIds = wearRecords.value
+    .filter(record => record.person_id === editData.value.person_id && !record.wear_end_time)
+    .map(record => {
+      // 如果sensor_detail_id存在且不为null，直接使用
+      if (record.sensor_detail_id != null) {
+        return record.sensor_detail_id;
+      }
+      // 如果sensor_detail_id为null，从sensors数组中查找对应的sensor记录
+      const sensor = sensors.value.find(s => s.sensor_id === record.sensor_id);
+      return sensor?.sensor_detail_id || null;
+    })
+    .filter(id => id !== null); // 过滤掉null值
     
   return sensorDetails.value.filter(sensor => 
-    currentPersonSensorIds.includes(sensor.sensor_detail_id) || 
+    currentPersonSensorDetailIds.includes(sensor.sensor_detail_id) || 
     !usedSensorIds.value.includes(sensor.sensor_detail_id)
   );
 });
@@ -896,6 +932,18 @@ onMounted(loadData);
 .data-count {
   color: #909399;
   font-size: 14px;
+}
+
+.highlight-number {
+  color: #1677ff;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+  display: inline-block;
+  margin: 0 2px;
 }
 
 .sensor-option {

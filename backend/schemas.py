@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
@@ -53,7 +53,7 @@ class BatchResponse(BatchBase):
 
 # 人员相关模式
 class PersonBase(BaseModel):
-    person_name: str
+    person_name: str = Field(..., min_length=2, max_length=50, description="人员姓名，长度2-50个字符")
     gender: Optional[GenderEnum] = None
     age: Optional[int] = None
     batch_id: Optional[int] = None

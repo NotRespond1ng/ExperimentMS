@@ -201,3 +201,12 @@ def delete_sensor(
     db.delete(db_sensor)
     db.commit()
     return MessageResponse(message="传感器记录删除成功")
+
+@router.get("/used-sensors", response_model=List[int])
+def get_used_sensors(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_module_permission(ModuleEnum.SENSOR_DATA, "read"))
+):
+    """获取已佩戴的传感器ID列表"""
+    used_sensor_ids = db.query(WearRecord.sensor_id).distinct().all()
+    return [sensor_id[0] for sensor_id in used_sensor_ids if sensor_id[0] is not None]

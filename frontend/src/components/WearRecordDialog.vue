@@ -257,6 +257,7 @@ interface Props {
   persons: Person[]
   sensorDetails: SensorDetail[]
   sensors: Sensor[]
+  usedSensorIds?: number[]
   loading: boolean
   removeSensorFromEdit?: (wearRecordId: number) => Promise<void>
 }
@@ -289,7 +290,9 @@ const formRules = {
 const availableBatches = computed(() => {
   // 仅显示传感器管理模块中已分配传感器的批次
   const assignedBatchIds = new Set(props.sensors?.map(s => s.batch_id) || [])
-  return props.batches?.filter(batch => assignedBatchIds.has(batch.batch_id)) || []
+  const filteredBatches = props.batches?.filter(batch => assignedBatchIds.has(batch.batch_id)) || []
+  // 按批次ID倒序排列，新建的批次显示在前面
+  return [...filteredBatches].sort((a, b) => b.batch_id - a.batch_id)
 })
 
 const availablePersons = computed(() => {
@@ -319,9 +322,16 @@ const availableSensorDetails = computed(() => {
   const relatedSensorDetailIds = new Set(relatedSensors.map(sensor => sensor.sensor_detail_id));
   
   // 使用提取出的ID集合来过滤总的传感器详情列表(sensorDetails)
-  const result = props.sensorDetails?.filter(detail => 
+  let result = props.sensorDetails?.filter(detail => 
     relatedSensorDetailIds.has(detail.sensor_detail_id)
   ) || [];
+  
+  // 在新建模式下，排除已佩戴的传感器详情
+  if (!props.isEdit && props.usedSensorIds && props.usedSensorIds.length > 0) {
+    result = result.filter(detail => 
+      !props.usedSensorIds!.includes(detail.sensor_detail_id)
+    );
+  }
   
   return result;
 })
@@ -366,15 +376,11 @@ const createDefaultSensorParam = (sensorDetailId: number): SensorParameter => {
     sensor.person_id === formData.person_id
   )
   
-  // 根据person_id获取person_name作为user_name（人员信息）
-  const selectedPerson = props.persons?.find(person => person.person_id === formData.person_id)
-  const userName = selectedPerson?.person_name || ''
-  
   // 在编辑模式下，从现有数据中获取其他字段的值
   let defaultParam: SensorParameter = {
     sensor_detail_id: sensorDetailId,
     sensor_id: relatedSensor?.sensor_id || 0,
-    user_name: userName, // 人员信息（来自persons表的person_name）
+    user_name: '', // 用户名称（用户手动输入）
     nickname: '', // 用户名称（用户手动输入的昵称）
     applicator_lot_no: '',
     sensor_lot_no: relatedSensor?.sensor_lot_no || '',

@@ -339,6 +339,7 @@ const filterPersonId = ref<number | undefined>()
 const availableBatchesForFilter = computed(() => {
   const batchIds = [...new Set(dataStore.competitorFiles.map(file => file.batch_id))]
   return dataStore.batches.filter(batch => batchIds.includes(batch.batch_id))
+    .sort((a, b) => b.batch_id - a.batch_id)
 })
 
 // 根据竞品文件数据中实际存在的人员进行筛选

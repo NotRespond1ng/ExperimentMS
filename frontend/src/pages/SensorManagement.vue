@@ -28,7 +28,7 @@
           @change="handleFilter"
         >
           <el-option
-            v-for="batch in availableBatchesForFilter"
+            v-for="batch in sortedAvailableBatchesForFilter"
             :key="batch.batch_id"
             :label="batch.batch_number"
             :value="batch.batch_id.toString()"
@@ -43,7 +43,7 @@
           @change="handleFilter"
         >
           <el-option
-            v-for="person in getFilteredPersons('filter')"
+            v-for="person in getSortedFilteredPersons('filter')"
             :key="person.person_id"
             :label="person.person_name"
             :value="person.person_id.toString()"
@@ -131,6 +131,16 @@
           <el-icon><CircleClose /></el-icon>
         </div>
       </el-card>
+      
+      <el-card class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ usedSensorsCount }}</div>
+          <div class="stat-label">已佩戴</div>
+        </div>
+        <div class="stat-icon used">
+          <el-icon><User /></el-icon>
+        </div>
+      </el-card>
     </div>
     
     <!-- 传感器列表 -->
@@ -138,7 +148,10 @@
       <template #header>
         <div class="card-header">
           <span>传感器列表</span>
-          <span class="data-count">共 {{ filteredSensors.length }} 个传感器</span>
+          <div class="header-stats">
+            <span class="data-count">共 <span class="highlight-number">{{ total }}</span> 条数据</span>
+            <span class="data-count" style="margin-left: 16px;">已佩戴 <span class="highlight-number">{{ usedSensorsCount }}</span> 个</span>
+          </div>
         </div>
       </template>
       
@@ -147,6 +160,7 @@
         stripe
         style="width: 100%"
         v-loading="loading"
+        :row-class-name="getRowClassName"
       >
         <el-table-column label="序号" width="80" align="center">
           <template #default="{ $index }">
@@ -158,14 +172,19 @@
         <el-table-column prop="sensor_lot_no" label="传感器批号" width="140">
           <template #default="{ row }">
             <span>{{ row.sensor_lot_no || '-' }}</span>
+            <el-tag v-if="isUsedSensor(row)" type="warning" size="small">
+                已佩戴
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="sensor_batch" label="传感器批次" width="140">
           <template #default="{ row }">
-            <span>{{ row.sensor_batch || '-' }}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>{{ row.sensor_batch || '-' }}</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column label="发射器号" width="120">
+        <el-table-column label="发射器号" width="150">
           <template #default="{ row }">
             <span class="transmitter-id">{{ row.transmitter_id || '-' }}</span>
           </template>
@@ -205,7 +224,12 @@
             <el-tag :type="getSensorStatus(row).type">{{ getSensorStatus(row).label }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column 
+          label="操作" 
+          width="150" 
+          fixed="right" 
+          class-name="fixed-right-column-bg"
+        >
           <template #default="{ row }">
             <el-button
               :disabled="!authStore.hasModulePermission('sensor_data', 'write')"
@@ -273,7 +297,7 @@
                     :disabled="isEdit"
                   >
                     <el-option
-                      v-for="batch in batches"
+                      v-for="batch in sortedBatches"
                       :key="batch.batch_id"
                       :label="`${batch.batch_number} (ID: ${batch.batch_id})`"
                       :value="batch.batch_id"
@@ -291,7 +315,7 @@
                     :disabled="isEdit || !form.batch_id"
                   >
                     <el-option
-                      v-for="person in getFilteredPersons('form')"
+                      v-for="person in getSortedFilteredPersons('form')"
                       :key="person.person_id"
                       :label="`${person.person_name} (ID: ${person.person_id})`"
                       :value="person.person_id"
@@ -433,7 +457,7 @@
                 clearable
               >
                 <el-option
-                  v-for="batch in batches"
+                  v-for="batch in sortedBatches"
                   :key="batch.batch_id"
                   :label="batch.batch_number"
                   :value="batch.batch_id"
@@ -451,7 +475,7 @@
                 :disabled="!batchForm.batch_id"
               >
                 <el-option
-                  v-for="person in getFilteredPersons('batch')"
+                  v-for="person in getSortedFilteredPersons('batch')"
                   :key="person.person_id"
                   :label="`${person.person_name} (${person.gender === 'Male' ? '男' : person.gender === 'Female' ? '女' : '其他'}, ${person.age}岁)`"
                   :value="person.person_id"
@@ -538,7 +562,7 @@
                         @change="(value) => handleBatchSensorChange(index, value)"
                       >
                         <el-option
-                          v-for="detail in availableSensorDetails"
+                          v-for="detail in getAvailableSensorDetailsForBatchItem(index)"
                           :key="detail.test_number"
                           :label="detail.test_number"
                           :value="detail.test_number"
@@ -628,24 +652,50 @@ import {
   CircleCheck,
   CircleClose,
   Clock,
-  Delete
+  Delete,
+  User
 } from '@element-plus/icons-vue'
-import { useDataStore, type Sensor, type Person, type Batch } from '../stores/data'
-import { ApiService, type SensorDetail } from '../services/api'
+import { ApiService } from '../services/api'
+import { useDataStore } from '../stores/data'
+import { exportToExcel } from '../utils/excel'
+import { formatDateTime, formatDate } from '../utils/formatters'
+import type { Sensor, Person, Batch, SensorDetail } from '../services/api'
 import { useAuthStore } from '../stores/auth'
-import { usePagination } from '@/composables/usePagination'
-import { formatDateTime, formatDate } from '@/utils/formatters'
-import { exportToExcel } from '@/utils/excel'
+import { usePagination } from '../composables/usePagination'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 const dataStore = useDataStore()
+
+// 响应式数据
+const searchKeyword = ref('')
+const filterBatch = ref('')
+const filterPerson = ref('')
+const filterStatus = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const dialogVisible = ref(false)
+const batchDialogVisible = ref(false)
+const isEdit = ref(false)
+const loading = ref(false)
+const usedSensorIds = ref<number[]>([])
+
 const authStore = useAuthStore()
 
 // 数据引用
 const persons = ref<Person[]>([])
 const batches = ref<Batch[]>([])
 const sensorDetails = ref<SensorDetail[]>([])
-const loading = ref(false)
+
+// 获取已佩戴传感器ID列表
+const loadUsedSensorIds = async () => {
+  try {
+    const response = await ApiService.getUsedSensors()
+    usedSensorIds.value = response || []
+  } catch (error) {
+    console.error('Failed to load used sensor IDs:', error)
+    usedSensorIds.value = []
+  }
+}
 
 // -- 优化：将数据加载逻辑提取到单独的函数中 --
 const loadAllData = async (forceRefresh = false) => {
@@ -661,7 +711,8 @@ const loadAllData = async (forceRefresh = false) => {
       dataStore.loadPersons(),
       dataStore.loadBatches(),
       dataStore.loadSensorDetails(),
-      dataStore.loadSensors() // 确保传感器数据也被加载
+      dataStore.loadSensors(), // 确保传感器数据也被加载
+      loadUsedSensorIds()
     ])
     persons.value = personsData
     batches.value = batchesData
@@ -701,18 +752,11 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
-const searchKeyword = ref('')
-const filterBatch = ref('')
-const filterPerson = ref('')
-const filterStatus = ref('')
-const dialogVisible = ref(false)
-const isEdit = ref(false)
 const formRef = ref<FormInstance>()
-const batchDialogVisible = ref(false)
 const batchFormRef = ref<FormInstance>()
 
 // 分页
-const { currentPage, pageSize, pageSizes, handleSizeChange, handleCurrentChange, resetPagination } = usePagination()
+const { pageSizes, handleSizeChange, handleCurrentChange, resetPagination } = usePagination()
 
 // 表单数据
 const form = reactive({
@@ -790,11 +834,27 @@ const getFilteredPersons = (type: 'form' | 'batch' | 'filter') => {
   return sourcePersons.filter(person => person.batch_id?.toString() === batchId?.toString());
 }
 
+// 排序后的人员筛选逻辑（新建的在前面）
+const getSortedFilteredPersons = (type: 'form' | 'batch' | 'filter') => {
+  const filteredPersons = getFilteredPersons(type);
+  return [...filteredPersons].sort((a, b) => b.person_id - a.person_id);
+}
+
 
 // 根据传感器数据中实际存在的批次进行筛选
 const availableBatchesForFilter = computed(() => {
   const batchIds = [...new Set(dataStore.sensors.map(sensor => sensor.batch_id))]
   return batches.value.filter(batch => batchIds.includes(batch.batch_id))
+})
+
+// 排序后的批次列表（新建的在前面）
+const sortedBatches = computed(() => {
+  return [...batches.value].sort((a, b) => b.batch_id - a.batch_id)
+})
+
+// 排序后的筛选批次列表（新建的在前面）
+const sortedAvailableBatchesForFilter = computed(() => {
+  return [...availableBatchesForFilter.value].sort((a, b) => b.batch_id - a.batch_id)
 })
 
 // 过滤已使用的传感器详情
@@ -804,8 +864,25 @@ const availableSensorDetails = computed(() => {
       .map(sensor => sensor.sensor_detail_id)
       .filter(id => id != null)
   )
-  return dataStore.sensorDetails.filter(detail => !usedSensorDetailIds.has(detail.sensor_detail_id))
+  return dataStore.sensorDetails
+    .filter(detail => !usedSensorDetailIds.has(detail.sensor_detail_id))
+    .sort((a, b) => b.sensor_detail_id - a.sensor_detail_id)
 })
+
+// 为批量录入中的每个传感器表单项获取可用的传感器详情（排除已被其他表单项选中的）
+const getAvailableSensorDetailsForBatchItem = (currentIndex: number) => {
+  // 获取其他表单项已选中的传感器批次
+  const selectedBatches = new Set(
+    batchForm.sensorList
+      .map((sensor, index) => index !== currentIndex ? sensor.sensor_batch : null)
+      .filter(batch => batch && batch.trim() !== '')
+  )
+  
+  // 过滤掉已被其他表单项选中的传感器批次
+  return availableSensorDetails.value.filter(detail => 
+    !selectedBatches.has(detail.test_number)
+  )
+}
 
 // 处理传感器批次变更
 const handleSensorBatchChange = (value: string) => {
@@ -884,6 +961,21 @@ const sensorStatusCounts = computed(() => {
   }, { notStarted: 0, running: 0, finished: 0 });
 });
 
+// 已佩戴传感器数量统计
+const usedSensorsCount = computed(() => {
+  return dataStore.sensors.filter(sensor => sensor.sensor_detail_id && usedSensorIds.value.includes(sensor.sensor_detail_id)).length
+})
+
+// 判断传感器是否已佩戴
+const isUsedSensor = (sensor: Sensor) => {
+  return sensor.sensor_detail_id ? usedSensorIds.value.includes(sensor.sensor_detail_id) : false
+}
+
+// 获取表格行的样式类名
+const getRowClassName = ({ row }: { row: Sensor }) => {
+  return isUsedSensor(row) ? 'used-sensor-row' : ''
+}
+
 
 // 事件处理
 const handleSearch = () => resetPagination()
@@ -926,7 +1018,13 @@ const handleBatchAdd = () => {
 }
 
 const addSensorItem = () => {
-  batchForm.sensorList.push({ sensor_lot_no: '', sensor_batch: '', sensor_number: '', transmitter_id: '', start_time: '', end_time: '', end_reason: '' })
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const currentDate = `${year}-${month}-${day}`
+  
+  batchForm.sensorList.push({ sensor_lot_no: '', sensor_batch: '', sensor_number: '', transmitter_id: '', start_time: currentDate, end_time: '', end_reason: '' })
 }
 
 const removeSensorItem = (index: number) => {
@@ -937,10 +1035,16 @@ const removeSensorItem = (index: number) => {
 
 const resetBatchForm = () => {
   batchFormRef.value?.resetFields()
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const currentDate = `${year}-${month}-${day}`
+  
   Object.assign(batchForm, {
     batch_id: null,
     person_id: null,
-    sensorList: [{ sensor_lot_no: '', sensor_batch: '', sensor_number: '', transmitter_id: '', start_time: '', end_time: '', end_reason: '' }]
+    sensorList: [{ sensor_lot_no: '', sensor_batch: '', sensor_number: '', transmitter_id: '', start_time: currentDate, end_time: '', end_reason: '' }]
   })
 }
 
@@ -973,26 +1077,41 @@ const handleDelete = async (row: Sensor) => {
   }
 }
 
+/**
+ * 修复 #1: 移除代码冗余
+ * 创建一个辅助函数来处理将可选字段的空字符串值转换为null。
+ * @param data - 传感器数据对象
+ */
+const sanitizeSensorPayload = (data: Record<string, any>) => {
+  const payload = { ...data };
+  const fieldsToSanitize = [
+    'sensor_lot_no',
+    'sensor_batch',
+    'sensor_number',
+    'transmitter_id',
+    'end_time',
+    'end_reason',
+    'sensor_detail_id'
+  ];
+  fieldsToSanitize.forEach(key => {
+    if (payload[key] === '' || payload[key] === undefined) {
+      payload[key] = null;
+    }
+  });
+  return payload;
+};
+
 const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const payload = {
-          ...form,
-          sensor_lot_no: form.sensor_lot_no || null,
-          sensor_batch: form.sensor_batch || null,
-          sensor_number: form.sensor_number || null,
-          transmitter_id: form.transmitter_id || null,
-          end_time: form.end_time || null,
-          end_reason: form.end_reason || null,
-          sensor_detail_id: form.sensor_detail_id || null
-        }
+        const payload = sanitizeSensorPayload(form);
         if (isEdit.value) {
           await dataStore.updateSensor(form.sensor_id, payload)
           ElMessage.success('更新成功')
         } else {
-          await dataStore.addSensor(payload)
+          await dataStore.addSensor(payload as Omit<Sensor, 'sensor_id'>)
           ElMessage.success('添加成功')
         }
         dialogVisible.value = false
@@ -1014,18 +1133,13 @@ const handleBatchSubmit = async () => {
       try {
         const promises = batchForm.sensorList.map(sensor => {
             const matchingDetail = dataStore.sensorDetails.find(d => d.test_number === sensor.sensor_batch);
-            return dataStore.addSensor({
+            const sensorData = {
                 ...sensor,
                 person_id: batchForm.person_id!,
                 batch_id: batchForm.batch_id!,
                 sensor_detail_id: matchingDetail?.sensor_detail_id || null,
-                sensor_lot_no: sensor.sensor_lot_no || null,
-                sensor_batch: sensor.sensor_batch || null,
-                sensor_number: sensor.sensor_number || null,
-                transmitter_id: sensor.transmitter_id || null,
-                end_time: sensor.end_time || null,
-                end_reason: sensor.end_reason || null,
-            });
+            };
+            return dataStore.addSensor(sanitizeSensorPayload(sensorData) as Omit<Sensor, 'sensor_id'>);
         });
         await Promise.all(promises);
         ElMessage.success(`成功批量添加 ${promises.length} 个传感器`);
@@ -1039,6 +1153,12 @@ const handleBatchSubmit = async () => {
 
 const resetForm = () => {
   formRef.value?.resetFields()
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const currentDate = `${year}-${month}-${day}`
+  
   Object.assign(form, {
     sensor_id: 0,
     sensor_lot_no: '',
@@ -1047,7 +1167,7 @@ const resetForm = () => {
     transmitter_id: '',
     person_id: null,
     batch_id: null,
-    start_time: '',
+    start_time: currentDate,
     end_time: '',
     end_reason: '',
     sensor_detail_id: null
@@ -1128,6 +1248,7 @@ const resetForm = () => {
 .stat-icon.running { background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%); }
 .stat-icon.not-started { background: linear-gradient(135deg, #E6A23C 0%, #eebe77 100%); }
 .stat-icon.finished { background: linear-gradient(135deg, #F56C6C 0%, #f89898 100%); }
+.stat-icon.used { background: linear-gradient(135deg, #409EFF 0%, #79bbff 100%); }
 
 .card-header {
   display: flex;
@@ -1142,6 +1263,18 @@ const resetForm = () => {
   font-size: 14px;
   color: #86909c;
   font-weight: normal;
+}
+
+.highlight-number {
+  color: #1677ff;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+  display: inline-block;
+  margin: 0 2px;
 }
 
 .pagination-container {
@@ -1267,4 +1400,41 @@ const resetForm = () => {
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }
 }
+
+/* 已佩戴传感器行的样式 */
+:deep(.used-sensor-row) {
+  background-color: #fef7e6 !important;
+}
+
+:deep(.used-sensor-row:hover) {
+  background-color: #fef2d6 !important;
+}
+
+/* 此规则对于非固定单元格是必需的，但会导致固定单元格出现问题 */
+:deep(.used-sensor-row td) {
+  background-color: transparent !important;
+}
+
+/**
+ * 为固定列添加纯色背景，以防止在水平滚动时出现透明问题。
+ * 这些规则将覆盖上面 problematic 的透明背景规则。
+*/
+:deep(.el-table .fixed-right-column-bg) {
+  background-color: #fff;
+}
+:deep(.el-table tr.el-table__row--striped > .fixed-right-column-bg) {
+  background-color: var(--el-fill-color-lighter);
+}
+:deep(.el-table tr.used-sensor-row > .fixed-right-column-bg) {
+  /* 使用 !important 覆盖上面的透明背景 */
+  background-color: #fef7e6 !important;
+}
+/* 同时处理固定列的悬停状态 */
+:deep(.el-table tr:hover > .fixed-right-column-bg) {
+  background-color: var(--el-table-row-hover-bg-color);
+}
+:deep(.el-table tr.used-sensor-row:hover > .fixed-right-column-bg) {
+  background-color: #fef2d6 !important;
+}
 </style>
+

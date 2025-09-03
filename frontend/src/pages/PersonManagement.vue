@@ -11,14 +11,29 @@
         <el-input
           v-model="searchText"
           placeholder="搜索人员姓名"
-          style="width: 300px"
           clearable
-          @input="handleSearch"
+          style="width: 300px"
+          @keyup.enter="handleSearch"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+        
+        <el-select
+          v-model="batchFilter"
+          placeholder="筛选批次"
+          clearable
+          style="width: 200px"
+        >
+          <el-option label="全部批次" value="" />
+          <el-option
+            v-for="batch in sortedBatches"
+            :key="batch.batch_id"
+            :label="batch.batch_number"
+            :value="batch.batch_id"
+          />
+        </el-select>
       </div>
       
       <div class="toolbar-right">
@@ -175,7 +190,7 @@
             clearable
           >
             <el-option
-              v-for="batch in batches"
+              v-for="batch in sortedBatches"
               :key="batch.batch_id"
               :label="batch.batch_number"
               :value="batch.batch_id"
@@ -213,7 +228,7 @@
             clearable
           >
             <el-option
-              v-for="batch in batches"
+              v-for="batch in sortedBatches"
               :key="batch.batch_id"
               :label="batch.batch_number"
               :value="batch.batch_id"
@@ -246,7 +261,7 @@
                     class="inline-form-item"
                   >
                     <el-input
-                      v-model="person.name"
+                      v-model="person.person_name"
                       placeholder="请输入姓名"
                       clearable
                     />
@@ -388,6 +403,7 @@ const {
 
 // 搜索相关
 const searchText = ref('')
+const batchFilter = ref('')
 const handleSearch = () => {
   resetPagination()
 }
@@ -435,14 +451,25 @@ const personRules = {
 const filteredPersons = computed(() => {
   let result = dataStore.persons
   
+  // 按姓名搜索过滤
   if (searchText.value) {
     result = result.filter(person => 
       person.person_name.toLowerCase().includes(searchText.value.toLowerCase())
     )
   }
   
+  // 按批次过滤
+  if (batchFilter.value) {
+    result = result.filter(person => person.batch_id === Number(batchFilter.value))
+  }
+  
   // 按人员ID倒序排列，最新创建的在前面
   return result.sort((a, b) => b.person_id - a.person_id)
+})
+
+// 排序后的批次列表（新建的在前面）
+const sortedBatches = computed(() => {
+  return [...batches.value].sort((a, b) => b.batch_id - a.batch_id)
 })
 
 // 当前页数据
@@ -495,7 +522,7 @@ const handleBatchAdd = () => {
 
 const addPersonToBatch = () => {
   batchForm.value.persons.push({
-    name: '',
+    person_name: '',
     gender: 'Male',
     age: undefined
   })

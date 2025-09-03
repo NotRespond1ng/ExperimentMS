@@ -3,7 +3,7 @@ import axios from 'axios'
 // 创建axios实例
 const api = axios.create({
   baseURL: 'http://localhost:8000',
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -302,11 +302,16 @@ export class ApiService {
   }
 
   static async deleteCompetitorFile(id: number): Promise<void> {
-    await api.delete(`/api/competitorFiles/${id}`)
+    await api.delete(`/api/competitorFiles/delete/${id}`)
   }
 
   static async renameCompetitorFile(id: number, newFileName: string): Promise<CompetitorFile> {
-    const response = await api.put(`/api/competitorFiles/${id}/rename`, { new_file_name: newFileName })
+    const response = await api.put(`/api/competitorFiles/rename/${id}?new_filename=${encodeURIComponent(newFileName)}`)
+    return response.data
+  }
+
+  static async checkCompetitorFileIntegrity(): Promise<{ message: string; issues_fixed: number }> {
+    const response = await api.get('/api/competitorFiles/check-integrity')
     return response.data
   }
 
@@ -373,9 +378,14 @@ export class ApiService {
     await api.delete(`/api/sensors/${id}`)
   }
 
+  static async getUsedSensorsFromSensorModule(): Promise<number[]> {
+    const response = await api.get('/api/sensors/used-sensors')
+    return response.data
+  }
+
   // 传感器详细信息管理
-  static async getSensorDetails(): Promise<SensorDetail[]> {
-    const response = await api.get('/api/sensorDetails/')
+  static async getSensorDetails(limit: number = 1000, skip: number = 0): Promise<SensorDetail[]> {
+    const response = await api.get(`/api/sensorDetails/?limit=${limit}&skip=${skip}`)
     return response.data
   }
 
@@ -395,6 +405,11 @@ export class ApiService {
 
   static async batchDeleteSensorDetails(ids: number[]): Promise<{ deleted_count: number }> {
     const response = await api.post('/api/sensorDetails/batch-delete', { ids })
+    return response.data
+  }
+
+  static async getUsedSensorDetails(): Promise<number[]> {
+    const response = await api.get('/api/sensorDetails/used-sensor-details')
     return response.data
   }
 
