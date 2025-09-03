@@ -702,14 +702,32 @@ const handleDelete = async (row: SensorDetail) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('删除传感器详细信息失败:', error)
+      
+      let errorMessage = '删除失败'
+      
       // 检查是否是HTTP错误响应
-      if (error && typeof error === 'object' && 'response' in error) {
-        const errorResponse = error as any
-        const errorMessage = errorResponse.response?.data?.detail || errorResponse.response?.data?.message || '删除失败'
-        ElMessage.error(errorMessage)
-      } else {
-        ElMessage.error('删除失败')
+      if (error && typeof error === 'object') {
+        // 优先从response.data中获取错误信息
+        if (error.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error.message) {
+          // 如果没有详细错误信息，显示HTTP状态码和错误类型
+          const status = error.status || error.response?.status
+          if (status) {
+            errorMessage = `删除失败 (HTTP ${status}): ${error.message}`
+          } else {
+            errorMessage = `删除失败: ${error.message}`
+          }
+        } else if (error.status || error.response?.status) {
+          // 只有状态码的情况
+          const status = error.status || error.response?.status
+          errorMessage = `删除失败 (HTTP ${status})`
+        }
       }
+      
+      ElMessage.error(errorMessage)
     }
   }
 }
@@ -745,14 +763,32 @@ const handleBatchDelete = async () => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('批量删除传感器详细信息失败:', error)
+      
+      let errorMessage = '批量删除失败'
+      
       // 检查是否是HTTP错误响应
-      if (error && typeof error === 'object' && 'response' in error) {
-        const errorResponse = error as any
-        const errorMessage = errorResponse.response?.data?.detail || errorResponse.response?.data?.message || '批量删除失败'
-        ElMessage.error(errorMessage)
-      } else {
-        ElMessage.error('批量删除失败')
+      if (error && typeof error === 'object') {
+        // 优先从response.data中获取错误信息
+        if (error.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error.message) {
+          // 如果没有详细错误信息，显示HTTP状态码和错误类型
+          const status = error.status || error.response?.status
+          if (status) {
+            errorMessage = `批量删除失败 (HTTP ${status}): ${error.message}`
+          } else {
+            errorMessage = `批量删除失败: ${error.message}`
+          }
+        } else if (error.status || error.response?.status) {
+          // 只有状态码的情况
+          const status = error.status || error.response?.status
+          errorMessage = `批量删除失败 (HTTP ${status})`
+        }
       }
+      
+      ElMessage.error(errorMessage)
     }
   }
 }
@@ -772,9 +808,34 @@ const handleSubmit = async () => {
     
     dialogVisible.value = false
     await loadSensorDetails()
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存传感器详细信息失败:', error)
-    ElMessage.error('保存失败')
+    
+    let errorMessage = '保存失败'
+    
+    // 检查是否是HTTP错误响应
+    if (error && typeof error === 'object') {
+      // 优先从response.data中获取错误信息
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        // 如果没有详细错误信息，显示HTTP状态码和错误类型
+        const status = error.status || error.response?.status
+        if (status) {
+          errorMessage = `保存失败 (HTTP ${status}): ${error.message}`
+        } else {
+          errorMessage = `保存失败: ${error.message}`
+        }
+      } else if (error.status || error.response?.status) {
+        // 只有状态码的情况
+        const status = error.status || error.response?.status
+        errorMessage = `保存失败 (HTTP ${status})`
+      }
+    }
+    
+    ElMessage.error(errorMessage)
   }
 }
 

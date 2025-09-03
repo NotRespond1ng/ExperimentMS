@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from models import SensorDetail, User
+from models import SensorDetail, User, Sensor
 from schemas import SensorDetailCreate, SensorDetailUpdate, SensorDetailResponse, MessageResponse, BatchDeleteRequest
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -184,6 +184,11 @@ def delete_sensor_detail(
     if not db_sensor_detail:
         raise HTTPException(status_code=404, detail="传感器详细信息不存在")
     
+    # 检查是否有传感器引用了这个传感器详细信息
+    referenced_sensor = db.query(Sensor).filter(Sensor.sensor_detail_id == sensor_detail_id).first()
+    if referenced_sensor:
+        raise HTTPException(status_code=400, detail="该传感器详细信息正在被传感器管理模块使用，无法删除")
+    
     db.delete(db_sensor_detail)
     db.commit()
     return MessageResponse(message="传感器详细信息记录删除成功")
@@ -203,6 +208,12 @@ def batch_delete_sensor_details(
     
     if not details_to_delete:
         raise HTTPException(status_code=404, detail="未找到要删除的数据")
+    
+    # 检查是否有传感器引用了这些传感器详细信息
+    referenced_sensors = db.query(Sensor).filter(Sensor.sensor_detail_id.in_(request.ids)).all()
+    if referenced_sensors:
+        referenced_ids = [sensor.sensor_detail_id for sensor in referenced_sensors]
+        raise HTTPException(status_code=400, detail=f"传感器详细信息ID {referenced_ids} 正在被传感器管理模块使用，无法删除")
     
     deleted_count = len(details_to_delete)
     
