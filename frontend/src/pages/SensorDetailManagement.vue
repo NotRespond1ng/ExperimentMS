@@ -702,7 +702,14 @@ const handleDelete = async (row: SensorDetail) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('删除传感器详细信息失败:', error)
-      ElMessage.error('删除失败')
+      // 检查是否是HTTP错误响应
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as any
+        const errorMessage = errorResponse.response?.data?.detail || errorResponse.response?.data?.message || '删除失败'
+        ElMessage.error(errorMessage)
+      } else {
+        ElMessage.error('删除失败')
+      }
     }
   }
 }
@@ -738,7 +745,14 @@ const handleBatchDelete = async () => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('批量删除传感器详细信息失败:', error)
-      ElMessage.error('批量删除失败')
+      // 检查是否是HTTP错误响应
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as any
+        const errorMessage = errorResponse.response?.data?.detail || errorResponse.response?.data?.message || '批量删除失败'
+        ElMessage.error(errorMessage)
+      } else {
+        ElMessage.error('批量删除失败')
+      }
     }
   }
 }
