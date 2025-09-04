@@ -405,6 +405,21 @@ watch(filteredBatches, (newVal) => {
   total.value = newVal.length
 }, { immediate: true })
 
+// 监听开始时间变化，自动更新结束时间（仅在新建模式下）
+watch(() => form.start_time, (newStartTime) => {
+  if (!isEdit.value && newStartTime) {
+    try {
+      const startDate = new Date(newStartTime)
+      if (!isNaN(startDate.getTime())) {
+        const endDate = new Date(startDate.getTime() + (15 * 24 * 60 * 60 * 1000)) // +15天
+        form.end_time = endDate.toISOString().slice(0, 19).replace('T', ' ')
+      }
+    } catch (error) {
+      console.error('计算结束时间失败:', error)
+    }
+  }
+})
+
 // 搜索处理
 const handleSearch = () => {
   resetPagination()
@@ -442,6 +457,10 @@ const handleAdd = () => {
   const now = new Date()
   const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)) // UTC+8
   form.start_time = beijingTime.toISOString().slice(0, 19).replace('T', ' ')
+  
+  // 自动填充结束时间为开始时间+15天
+  const endTime = new Date(beijingTime.getTime() + (15 * 24 * 60 * 60 * 1000)) // +15天
+  form.end_time = endTime.toISOString().slice(0, 19).replace('T', ' ')
 }
 
 // 添加人员

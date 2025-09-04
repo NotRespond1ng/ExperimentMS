@@ -165,7 +165,7 @@
       v-model:visible="dialogVisible"
       :is-edit="isEdit"
       :edit-data="editData"
-      :batches="sortedBatches"
+      :batches="availableBatches"
       :persons="persons"
       :sensor-details="sensorDetails"
       :sensors="sensors"
@@ -179,7 +179,7 @@
     <!-- 批量添加对话框 -->
     <BatchAddDialog
       v-model:visible="batchDialogVisible"
-      :batches="sortedBatches"
+      :batches="availableBatches"
       :persons="persons"
       :available-sensor-details="sensorDetails"
       :sensors="sensors"

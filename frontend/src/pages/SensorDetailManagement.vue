@@ -156,7 +156,7 @@
             <span v-else class="no-data">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right" class-name="fixed-right-column-bg">
           <template #header>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span>操作</span>
@@ -1352,5 +1352,27 @@ onMounted(() => {
 
 :deep(.used-sensor-row td) {
   background-color: transparent !important;
+}
+
+/**
+ * 为固定列添加纯色背景，以防止在水平滚动时出现透明问题。
+ * 这些规则将覆盖上面 problematic 的透明背景规则。
+*/
+:deep(.el-table .fixed-right-column-bg) {
+  background-color: #fff;
+}
+:deep(.el-table tr.el-table__row--striped > .fixed-right-column-bg) {
+  background-color: var(--el-fill-color-lighter);
+}
+:deep(.el-table tr.used-sensor-row > .fixed-right-column-bg) {
+  /* 使用 !important 覆盖上面的透明背景 */
+  background-color: #fef7e6 !important;
+}
+/* 同时处理固定列的悬停状态 */
+:deep(.el-table tr:hover > .fixed-right-column-bg) {
+  background-color: var(--el-table-row-hover-bg-color);
+}
+:deep(.el-table tr.used-sensor-row:hover > .fixed-right-column-bg) {
+  background-color: #fef2d6 !important;
 }
 </style>
