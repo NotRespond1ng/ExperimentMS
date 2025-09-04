@@ -352,6 +352,9 @@ export const useDataStore = defineStore('data', () => {
     try {
       const newExperiment = await ApiService.createExperiment(experiment)
       experiments.value.push(newExperiment)
+      // 自动刷新相关数据
+      clearCache('persons')
+      clearCache('batches')
       return newExperiment
     } catch (err) {
       error.value = err instanceof Error ? err.message : '创建实验失败'
@@ -366,6 +369,9 @@ export const useDataStore = defineStore('data', () => {
       if (index !== -1) {
         experiments.value[index] = updatedExperiment
       }
+      // 自动刷新相关数据
+      clearCache('persons')
+      clearCache('batches')
       return updatedExperiment
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新实验失败'
@@ -380,8 +386,28 @@ export const useDataStore = defineStore('data', () => {
       if (index !== -1) {
         experiments.value.splice(index, 1)
       }
+      // 自动刷新相关数据
+      clearCache('persons')
+      clearCache('batches')
     } catch (err) {
       error.value = err instanceof Error ? err.message : '删除实验失败'
+      throw err
+    }
+  }
+
+  const removeExperimentMember = async (experimentId: number, personId: number) => {
+    try {
+      await ApiService.removeExperimentMember(experimentId, personId)
+      // 自动刷新相关数据以确保同步
+      clearCache('experiments')
+      clearCache('persons')
+      clearCache('batches')
+      // 重新加载数据
+      await loadExperiments()
+      await loadPersons()
+      await loadBatches()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '移除实验成员失败'
       throw err
     }
   }
@@ -565,6 +591,7 @@ export const useDataStore = defineStore('data', () => {
     addExperiment,
     updateExperiment,
     deleteExperiment,
+    removeExperimentMember,
     // 竞品文件管理
     addCompetitorFile,
     deleteCompetitorFile,

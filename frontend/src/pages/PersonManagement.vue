@@ -629,6 +629,10 @@ const handleSubmit = async () => {
             batch_id: form.batch_id
           })
           ElMessage.success('创建成功')
+          
+          // 重新加载人员数据，与批量录入逻辑保持一致
+          const personsData = await ApiService.getPersons()
+          dataStore.persons = personsData
         }
         
         // 更新批次数据（仅在新建时需要，编辑时dataStore.updatePerson已处理）

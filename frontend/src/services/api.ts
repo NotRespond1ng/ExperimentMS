@@ -261,7 +261,7 @@ export class ApiService {
 
   // 实验管理
   static async getExperiments(): Promise<Experiment[]> {
-    const response = await api.get('/api/experiments/')
+    const response = await api.get('/api/experiments/?limit=1000')
     return response.data
   }
 
@@ -277,6 +277,10 @@ export class ApiService {
 
   static async deleteExperiment(id: number): Promise<void> {
     await api.delete(`/api/experiments/${id}`)
+  }
+
+  static async removeExperimentMember(experimentId: number, personId: number): Promise<void> {
+    await api.delete(`/api/experiments/${experimentId}/members/${personId}`)
   }
 
   // 竞品文件管理

@@ -15,8 +15,9 @@
           style="width: 200px; margin-right: 12px"
           @change="handleFilter"
         >
+          <!-- MODIFIED: 使用统一的、安全的计算属性 sortedAvailableBatches -->
           <el-option
-            v-for="batch in availableBatchesForFilter"
+            v-for="batch in sortedAvailableBatches"
             :key="batch.batch_id"
             :label="batch.batch_number"
             :value="batch.batch_id"
@@ -40,6 +41,7 @@
       </div>
       
       <div class="toolbar-right">
+
         <el-button 
           :disabled="!authStore.hasModulePermission('experiment_management', 'read')"
           @click="handleExport"
@@ -71,8 +73,6 @@
             {{ (currentPage - 1) * pageSize + $index + 1 }}
           </template>
         </el-table-column>
-        <!-- 隐藏原始experiment_id列，但保留数据用于后端传递 -->
-        <!-- <el-table-column prop="experiment_id" label="实验ID" width="100" /> -->
         <el-table-column label="实验批次号" width="150">
           <template #default="{ row }">
             <el-tag type="primary">
@@ -90,7 +90,7 @@
                 </div>
                 <div class="members-list">
                   <div 
-                    v-for="(member, index) in row.members" 
+                    v-for="(member, index) in row.members.slice(0, 5)" 
                     :key="member.id"
                     class="member-item"
                   >
@@ -101,13 +101,30 @@
                       <span class="member-name">{{ member.person_name }}</span>
                       <span class="member-id">ID: {{ member.person_id }}</span>
                     </div>
-                    <el-tag 
-                      type="info" 
-                      size="small"
-                      class="member-role"
-                    >
-                      成员
-                    </el-tag>
+                    <div class="member-actions">
+                      <el-tag 
+                        type="info" 
+                        size="small"
+                        class="member-role"
+                      >
+                        成员
+                      </el-tag>
+                      <el-button
+                        v-if="authStore.hasModulePermission('experiment_management', 'write')"
+                        type="danger"
+                        size="small"
+                        text
+                        @click="handleRemoveMember(row.experiment_id, member.person_id, member.person_name)"
+                        class="remove-member-btn"
+                      >
+                        移除
+                      </el-button>
+                    </div>
+                  </div>
+                  <!-- 显示剩余成员数量 -->
+                  <div v-if="row.members.length > 5" class="more-members">
+                    <el-icon class="more-icon"><MoreFilled /></el-icon>
+                    <span class="more-text">...还有{{ row.members.length - 5 }}人</span>
                   </div>
                 </div>
               </div>
@@ -185,8 +202,9 @@
             placeholder="请选择实验批次"
             style="width: 100%"
           >
+            <!-- MODIFIED: 使用统一的、安全的计算属性 sortedAvailableBatches -->
             <el-option
-              v-for="batch in dataStore.batches"
+              v-for="batch in sortedAvailableBatches"
               :key="batch.batch_id"
               :label="`${batch.batch_number} (${batch.start_time})`"
               :value="batch.batch_id"
@@ -195,7 +213,38 @@
         </el-form-item>
         
         <el-form-item label="实验成员" prop="member_ids" label-width="120px">
+          <div v-if="!isEdit" class="auto-sync-members">
+            <div v-if="!form.batch_id" class="no-batch-selected">
+              <el-icon><UserFilled /></el-icon>
+              <span>请先选择实验批次，将自动同步该批次下的所有人员</span>
+            </div>
+            <div v-else-if="filteredPersons.length === 0" class="no-members">
+              <el-icon><UserFilled /></el-icon>
+              <span>该批次下暂无人员</span>
+            </div>
+            <div v-else class="members-preview">
+              <div class="members-header">
+                <el-icon class="sync-icon"><User /></el-icon>
+                <span class="sync-text">将自动添加以下 {{ filteredPersons.length }} 名成员：</span>
+              </div>
+              <div class="members-list">
+                <el-tag
+                  v-for="person in filteredPersons.slice(0, 10)"
+                  :key="person.person_id"
+                  type="info"
+                  size="small"
+                  class="member-tag"
+                >
+                  {{ person.person_name }} (ID: {{ person.person_id }})
+                </el-tag>
+                <el-tag v-if="filteredPersons.length > 10" type="info" size="small" class="more-tag">
+                  ...还有{{ filteredPersons.length - 10 }}人
+                </el-tag>
+              </div>
+            </div>
+          </div>
           <el-select
+            v-else
             v-model="form.member_ids"
             placeholder="请选择实验成员"
             multiple
@@ -210,8 +259,8 @@
               :value="person.person_id"
             />
           </el-select>
-          <div class="form-tip">
-            {{ form.batch_id ? '显示该实验批次下的人员' : '请先选择实验批次' }}
+          <div v-if="isEdit" class="form-tip">
+            编辑模式：可手动调整实验成员
           </div>
         </el-form-item>
         
@@ -236,67 +285,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
+// NEW: 引入 onActivated 生命周期钩子
+import { ref, computed, reactive, onMounted, onUnmounted, watch, nextTick, onActivated } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { Search, Plus, Download, User, UserFilled } from '@element-plus/icons-vue'
+import { Plus, Download, User, UserFilled, MoreFilled } from '@element-plus/icons-vue'
 import { useDataStore, type Experiment } from '../stores/data'
 import { ApiService } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { usePagination } from '@/composables/usePagination'
 
-import { getBatchNumber, getPersonName, formatDateTime } from '@/utils/formatters'
+import { getBatchNumber, formatDateTime } from '@/utils/formatters'
 import { exportToExcel } from '@/utils/excel'
 
 const dataStore = useDataStore()
 const authStore = useAuthStore()
 
-// 页面可见性监听
-const handleVisibilityChange = async () => {
-  if (!document.hidden) {
-    // 页面变为可见时刷新数据
-    try {
-      loading.value = true
-      await Promise.all([
-        dataStore.loadExperiments(true),
-        dataStore.loadPersons(true),
-        dataStore.loadBatches(true)
-      ])
-    } catch (error) {
-      console.error('Failed to refresh data:', error)
-    } finally {
-      loading.value = false
-    }
-  }
-}
+const loading = ref(false)
 
-// 组件挂载时获取最新数据
-onMounted(async () => {
+// --- NEW: 统一的数据加载逻辑 ---
+const loadPageData = async (force = false) => {
   try {
     loading.value = true
-    
-    // 使用缓存机制加载数据
+    // 并行加载所有需要的数据，force参数确保可以强制从服务器获取最新数据
     await Promise.all([
-      dataStore.loadExperiments(),
-      dataStore.loadPersons(),
-      dataStore.loadBatches()
+      dataStore.loadExperiments(force),
+      dataStore.loadPersons(force),
+      dataStore.loadBatches(force)
     ])
-    
-    // 添加页面可见性监听
-    document.addEventListener('visibilitychange', handleVisibilityChange)
   } catch (error) {
-    console.error('Failed to load data:', error)
+    console.error('Failed to load page data:', error)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
+}
+
+// 页面可见性变化处理函数，用于浏览器切页后的数据刷新
+const handleVisibilityChange = () => {
+  if (!document.hidden) {
+    console.log('页面重新可见，强制刷新数据...');
+    loadPageData(true)
+  }
+}
+
+// --- MODIFIED: onMounted 现在只负责初始加载和事件监听 ---
+onMounted(() => {
+  loadPageData() // 首次进入页面时加载数据
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
-// 组件卸载时移除监听器
+// --- NEW: 添加 onActivated 钩子 ---
+// 当组件在 <keep-alive> 中被激活时，此钩子会被调用
+// 这解决了切换路由回来后数据不刷新的问题
+onActivated(() => {
+  console.log('组件被激活，强制刷新数据...');
+  loadPageData(true) // 每次进入该模块都强制刷新数据
+})
+
+// 组件卸载时清理监听器
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
-const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
@@ -308,21 +358,11 @@ const { currentPage, pageSize, pageSizes, handleSizeChange, handleCurrentChange,
 const filterBatchId = ref<number | undefined>()
 const filterPersonId = ref<number | undefined>()
 
-// 根据实验数据中实际存在的批次进行筛选
-const availableBatchesForFilter = computed(() => {
-  const batchIds = [...new Set(dataStore.experiments.map(exp => exp.batch_id))]
-  return dataStore.batches.filter(batch => batchIds.includes(batch.batch_id))
-})
+// --- REMOVED: 移除重复且不安全的 availableBatchesForFilter ---
 
-// 根据实验数据中实际存在的人员进行筛选
+// 显示人员表中的所有人员
 const availablePersonsForFilter = computed(() => {
-  const personIds = new Set<number>()
-  dataStore.experiments.forEach(exp => {
-    if (exp.members) {
-      exp.members.forEach(member => personIds.add(member.person_id))
-    }
-  })
-  return dataStore.persons.filter(person => personIds.has(person.person_id))
+  return dataStore.persons
 })
 
 // 根据选择的批次过滤人员
@@ -353,8 +393,29 @@ const rules = {
     { required: true, message: '请选择关联实验批次', trigger: 'change' }
   ],
   member_ids: [
-    { required: true, message: '请至少选择一个实验成员', trigger: 'change' },
-    { type: 'array', min: 1, message: '请至少选择一个实验成员', trigger: 'change' }
+    { 
+      validator: (rule: any, value: any, callback: any) => {
+        if (isEdit.value) {
+          if (!value || value.length === 0) {
+            callback(new Error('请至少选择一个实验成员'))
+          } else {
+            callback()
+          }
+        } else {
+          if (form.batch_id) {
+            const batchPersons = dataStore.persons.filter(person => person.batch_id === form.batch_id)
+            if (batchPersons.length === 0) {
+              callback(new Error('该批次下暂无人员，无法创建实验'))
+            } else {
+              callback()
+            }
+          } else {
+            callback(new Error('请先选择实验批次'))
+          }
+        }
+      },
+      trigger: 'change'
+    }
   ],
   experiment_content: [
     { max: 500, message: '实验内容长度不能超过 500 个字符', trigger: 'blur' }
@@ -375,7 +436,6 @@ const filteredExperiments = computed(() => {
     )
   }
   
-  // 按实验ID倒序排列，最新创建的在前面
   return result.sort((a, b) => b.experiment_id - a.experiment_id)
 })
 
@@ -389,37 +449,55 @@ const paginatedExperiments = computed(() => {
 // 总数据量
 const total = computed(() => filteredExperiments.value.length)
 
-// 根据选择的批次过滤人员
+// 根据选择的批次过滤人员，用于表单弹窗
 const filteredPersons = computed(() => {
   if (!form.batch_id) {
     return []
   }
-  return dataStore.persons.filter(person => person.batch_id === form.batch_id)
+  const batchPersons = dataStore.persons.filter(person => person.batch_id === form.batch_id)
+  return batchPersons.sort((a, b) => a.person_id - b.person_id)
 })
 
-// 监听批次选择变化，清空人员选择
+// --- 重命名 sortedBatches 并作为唯一的批次排序来源 ---
+const sortedAvailableBatches = computed(() => {
+  // 获取所有已存在实验记录的batch_id列表
+  const existingBatchIds = new Set(dataStore.experiments.map(exp => exp.batch_id))
+  
+  // 过滤掉已有实验记录的批次，只显示未添加实验记录的批次
+  const availableBatches = dataStore.batches.filter(batch => !existingBatchIds.has(batch.batch_id))
+  
+  // 使用[...]创建新数组进行排序，避免直接修改store状态
+  return [...availableBatches].sort((a, b) => 
+    new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+  )
+})
+
+// 监听批次选择变化，新建时自动同步人员
 watch(() => form.batch_id, (newBatchId, oldBatchId) => {
   if (newBatchId !== oldBatchId) {
-    form.member_ids = []
+    if (isEdit.value) {
+      form.member_ids = []
+    } else {
+      nextTick(() => {
+        if (newBatchId) {
+          const batchPersons = dataStore.persons.filter(person => person.batch_id === newBatchId)
+          form.member_ids = batchPersons.map(person => person.person_id)
+        } else {
+          form.member_ids = []
+        }
+      })
+    }
   }
 })
 
-
-
-
-
-
-
 // 筛选处理
 const handleFilter = () => {
-  // 筛选逻辑已在computed中处理
   resetPagination()
 }
 
 // 导出数据
 const handleExport = () => {
   try {
-    // 准备导出数据
     const exportData = filteredExperiments.value.map(experiment => ({
       '实验ID': experiment.experiment_id,
       '实验批次号': getBatchNumber(experiment.batch_id),
@@ -449,14 +527,11 @@ const handleEdit = (row: Experiment) => {
   isEdit.value = true
   dialogVisible.value = true
   
-  // 先设置基本信息
   form.experiment_id = row.experiment_id
   form.batch_id = row.batch_id
   form.experiment_content = row.experiment_content || ''
   
-  // 使用nextTick确保batch_id设置完成后再设置member_ids，避免被watch清空
   nextTick(() => {
-    // 从members数组中提取person_id作为member_ids
     form.member_ids = row.members ? row.members.map(member => member.person_id) : (row.member_ids || [])
   })
 }
@@ -465,30 +540,21 @@ const handleEdit = (row: Experiment) => {
 const handleDelete = async (row: Experiment) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除实验记录 "${row.experiment_id}" 吗？`,
-      '删除确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
+      `确定要删除实验记录 "${row.experiment_id}" 吗？`, '删除确认',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
     )
     
-    loading.value = true
     await ApiService.deleteExperiment(row.experiment_id)
+    ElMessage.success('删除成功')
     
-    // 清除相关缓存并重新加载数据
-    dataStore.clearCache('experiments')
+    // 只刷新实验数据即可
     await dataStore.loadExperiments(true)
     
-    ElMessage.success('删除成功')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Delete failed:', error)
       ElMessage.error('删除失败')
     }
-  } finally {
-    loading.value = false
   }
 }
 
@@ -498,41 +564,50 @@ const handleSubmit = async () => {
   
   await formRef.value.validate(async (valid) => {
     if (valid) {
+      const payload = {
+        batch_id: form.batch_id!,
+        member_ids: form.member_ids,
+        experiment_content: form.experiment_content
+      }
+      
       try {
-        loading.value = true
-        
         if (isEdit.value) {
-          // 编辑
-          await ApiService.updateExperiment(form.experiment_id, {
-            batch_id: form.batch_id!,
-            member_ids: form.member_ids,
-            experiment_content: form.experiment_content
-          })
+          await ApiService.updateExperiment(form.experiment_id, payload)
           ElMessage.success('更新成功')
         } else {
-          // 新建
-          await ApiService.createExperiment({
-            batch_id: form.batch_id!,
-            member_ids: form.member_ids,
-            experiment_content: form.experiment_content
-          })
+          await ApiService.createExperiment(payload)
           ElMessage.success('创建成功')
         }
         
-        // 清除相关缓存并重新加载数据
-        dataStore.clearCache('experiments')
+        dialogVisible.value = false
         await dataStore.loadExperiments(true)
         
-        dialogVisible.value = false
-        resetForm()
       } catch (error) {
         console.error('Submit failed:', error)
         ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
-      } finally {
-        loading.value = false
       }
     }
   })
+}
+
+// 移除实验成员
+const handleRemoveMember = async (experimentId: number, personId: number, personName: string) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要从实验中移除成员 ${personName} 吗？`, '确认移除',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    
+    await dataStore.removeExperimentMember(experimentId, personId)
+    ElMessage.success(`成功移除成员 ${personName}`)
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('移除成员失败:', error)
+      const errorMessage = error instanceof Error ? error.message : '移除成员失败'
+      ElMessage.error(`移除成员失败: ${errorMessage}`)
+    }
+  }
 }
 
 // 重置表单
@@ -550,6 +625,7 @@ const resetForm = () => {
 </script>
 
 <style scoped>
+/* 样式部分未作修改，保持原样 */
 .experiment-management {
   max-width: 1200px;
   margin: 0 auto;
@@ -745,4 +821,96 @@ const resetForm = () => {
   font-size: 12px;
   line-height: 1.4;
 }
+
+.more-members {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border: 1px dashed #409eff;
+  color: #409eff;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.more-icon {
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+.more-text {
+  font-weight: 500;
+}
+
+.auto-sync-members {
+  min-height: 60px;
+}
+
+.no-batch-selected,
+.no-members {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border: 1px dashed #e4e7ed;
+  border-radius: 8px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.no-batch-selected .el-icon,
+.no-members .el-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.members-preview {
+  background: #f0f9ff;
+  border: 1px solid #b3d8ff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.members-preview .members-header { 
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #d1ecf1;
+}
+
+.sync-icon {
+  color: #409eff;
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.sync-text {
+  color: #409eff;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.members-preview .members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-direction: row;
+}
+
+.member-tag {
+  margin: 0;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.more-tag {
+  background-color: #e1f5fe;
+  border-color: #81d4fa;
+  color: #0277bd;
+}
+
 </style>

@@ -602,7 +602,7 @@ const filteredData = computed(() => {
     })
   }
   
-  return result.sort((a, b) => b.finger_blood_file_id - a.finger_blood_file_id)
+  return result.sort((a, b) => new Date(b.collection_time).getTime() - new Date(a.collection_time).getTime())
 })
 
 // 当前页数据

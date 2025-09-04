@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from database import get_db
-from models import Person, Batch, User, ExperimentMember, WearRecord
+from models import Person, Batch, User, ExperimentMember, WearRecord, Experiment
 from schemas import PersonCreate, PersonUpdate, PersonResponse, MessageResponse, BatchResponse
 from routers.auth import get_current_user, check_module_permission
 from models import ModuleEnum
@@ -58,9 +58,39 @@ def create_person(
     """添加新人员"""
     db_person = Person(**person.dict())
     db.add(db_person)
-    db.commit()
-    db.refresh(db_person)
-    return db_person
+    
+    try:
+        # 先提交人员信息以获取person_id
+        db.commit()
+        db.refresh(db_person)
+        
+        # 如果新建的人员有batch_id，自动将该人员添加到该批次对应的所有实验中
+        if db_person.batch_id:
+            experiments = db.query(Experiment).filter(Experiment.batch_id == db_person.batch_id).all()
+            for experiment in experiments:
+                # 检查是否已经存在该成员记录，避免重复添加
+                existing_member = db.query(ExperimentMember).filter(
+                    ExperimentMember.experiment_id == experiment.experiment_id,
+                    ExperimentMember.person_id == db_person.person_id
+                ).first()
+                
+                if not existing_member:
+                    # 添加新的实验成员记录
+                    new_member = ExperimentMember(
+                        experiment_id=experiment.experiment_id,
+                        person_id=db_person.person_id
+                    )
+                    db.add(new_member)
+            
+            # 提交实验成员关系的更改
+            db.commit()
+        
+        return db_person
+        
+    except Exception as e:
+        # 如果出现错误，回滚事务
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"创建人员时发生错误: {str(e)}")
 
 @router.get("/{person_id}", response_model=PersonResponse)
 def get_person(
@@ -86,12 +116,58 @@ def update_person(
     if not db_person:
         raise HTTPException(status_code=404, detail="人员不存在")
     
-    for field, value in person.dict().items():
+    # 获取旧的batch_id用于后续比较
+    old_batch_id = db_person.batch_id
+    
+    # 更新人员信息
+    update_data = person.dict(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(db_person, field, value)
     
-    db.commit()
-    db.refresh(db_person)
-    return db_person
+    # 检查batch_id是否发生变化
+    new_batch_id = getattr(db_person, 'batch_id', old_batch_id)
+    
+    try:
+        # 如果batch_id发生变化，需要同步更新实验成员关系
+        if old_batch_id != new_batch_id:
+            # 从旧批次对应的实验中移除该人员
+            if old_batch_id:
+                old_experiments = db.query(Experiment).filter(Experiment.batch_id == old_batch_id).all()
+                for experiment in old_experiments:
+                    # 移除该人员的实验成员记录
+                    db.query(ExperimentMember).filter(
+                        ExperimentMember.experiment_id == experiment.experiment_id,
+                        ExperimentMember.person_id == person_id
+                    ).delete()
+            
+            # 将该人员添加到新批次对应的实验中
+            if new_batch_id:
+                new_experiments = db.query(Experiment).filter(Experiment.batch_id == new_batch_id).all()
+                for experiment in new_experiments:
+                    # 检查是否已经存在该成员记录，避免重复添加
+                    existing_member = db.query(ExperimentMember).filter(
+                        ExperimentMember.experiment_id == experiment.experiment_id,
+                        ExperimentMember.person_id == person_id
+                    ).first()
+                    
+                    if not existing_member:
+                        # 添加新的实验成员记录
+                        new_member = ExperimentMember(
+                            experiment_id=experiment.experiment_id,
+                            person_id=person_id
+                        )
+                        db.add(new_member)
+        
+        # 提交所有更改
+        db.commit()
+        db.refresh(db_person)
+        
+        return db_person
+        
+    except Exception as e:
+        # 如果出现错误，回滚事务
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"更新人员信息时发生错误: {str(e)}")
 
 @router.delete("/{person_id}", response_model=MessageResponse)
 def delete_person(

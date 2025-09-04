@@ -19,7 +19,7 @@ def get_experiments(
     current_user: User = Depends(check_module_permission(ModuleEnum.EXPERIMENT_MANAGEMENT, "read"))
 ):
     """获取实验列表"""
-    query = db.query(Experiment).join(Batch)
+    query = db.query(Experiment).outerjoin(Batch)
     
     if batch_id:
         query = query.filter(Experiment.batch_id == batch_id)
