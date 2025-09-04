@@ -407,6 +407,21 @@ export class ApiService {
     await api.delete(`/api/sensorDetails/${id}`)
   }
 
+  static async batchCreateSensorDetails(sensorDetails: Omit<SensorDetail, 'sensor_detail_id' | 'created_time'>[]): Promise<{ message: string; created_count: number; data: SensorDetail[] }> {
+    const response = await api.post('/api/sensorDetails/batch', sensorDetails)
+    return response.data
+  }
+
+  static async checkSensorDetailDuplicates(testNumber?: string, probeNumber?: string, excludeId?: number): Promise<{ has_duplicates: boolean; duplicates: any[] }> {
+    const params = new URLSearchParams()
+    if (testNumber) params.append('test_number', testNumber)
+    if (probeNumber) params.append('probe_number', probeNumber)
+    if (excludeId) params.append('exclude_id', excludeId.toString())
+    
+    const response = await api.post(`/api/sensorDetails/check-duplicates?${params.toString()}`)
+    return response.data
+  }
+
   static async batchDeleteSensorDetails(ids: number[]): Promise<{ deleted_count: number }> {
     const response = await api.post('/api/sensorDetails/batch-delete', { ids })
     return response.data

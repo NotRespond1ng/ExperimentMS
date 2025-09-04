@@ -212,6 +212,10 @@
       @close="resetForm"
       top="5vh"
     >
+      <div class="batch-form-header">
+        <span class="batch-tip">提示：测试编号、探针编号和灭菌日期为必填项，其他为选填。</span>
+      </div>
+      
       <div class="unified-form-layout">
         <el-form
           ref="formRef"
@@ -221,7 +225,7 @@
         >
           <el-row :gutter="24">
             <el-col :span="8">
-              <el-form-item label="传感器测试编号" prop="test_number">
+              <el-form-item label="传感器测试编号" prop="test_number" required>
                 <el-input
                   v-model="form.test_number"
                   placeholder="请输入测试编号"
@@ -229,7 +233,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="探针编号" prop="probe_number">
+              <el-form-item label="探针编号" prop="probe_number" required>
                 <el-input
                   v-model="form.probe_number"
                   placeholder="请输入探针编号"
@@ -237,7 +241,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="灭菌日期">
+              <el-form-item label="灭菌日期" prop="sterilization_date" required>
                 <el-date-picker
                   v-model="form.sterilization_date"
                   type="date"
@@ -370,7 +374,7 @@
           <el-icon><Plus /></el-icon>
           添加一行
         </el-button>
-        <span class="batch-tip">提示：测试编号和探针编号为必填项，其他为选填。</span>
+        <span class="batch-tip">提示：测试编号、探针编号和灭菌日期为必填项，其他为选填。</span>
       </div>
       
       <div class="batch-form-container">
@@ -407,7 +411,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="灭菌日期">
+                <el-form-item label="灭菌日期" required>
                   <el-date-picker
                     v-model="item.sterilization_date"
                     type="date"
@@ -639,6 +643,9 @@ const rules = {
   probe_number: [
     { required: true, message: '请输入探针编号', trigger: 'blur' },
     { max: 100, message: '探针编号长度不能超过100个字符', trigger: 'blur' }
+  ],
+  sterilization_date: [
+    { required: true, message: '请选择灭菌日期', trigger: 'change' }
   ]
 }
 
@@ -704,28 +711,72 @@ const resetBatchForm = () => {
 
 const handleBatchSubmit = async () => {
   try {
+    // 检查必填字段：测试编号、探针编号和灭菌日期
+    const invalidItems: string[] = []
+    batchForm.value.items.forEach((item, index) => {
+      const missingFields: string[] = []
+      if (!item.test_number) missingFields.push('测试编号')
+      if (!item.probe_number) missingFields.push('探针编号')
+      if (!item.sterilization_date) missingFields.push('灭菌日期')
+      
+      if (missingFields.length > 0) {
+        invalidItems.push(`第 ${index + 1} 行缺少：${missingFields.join('、')}`)
+      }
+    })
+    
+    if (invalidItems.length > 0) {
+      ElMessage.error(`请完善以下必填项：\n${invalidItems.join('\n')}`)
+      return
+    }
+    
     const validItems = batchForm.value.items.filter(item => 
-      item.test_number && item.probe_number
+      item.test_number && item.probe_number && item.sterilization_date
     )
     
     if (validItems.length === 0) {
-      ElMessage.warning('请至少填写一条有效的传感器信息 (测试编号和探针编号为必填项)')
+      ElMessage.warning('请至少填写一条有效的传感器信息 (测试编号、探针编号和灭菌日期为必填项)')
       return
     }
     
     loading.value = true
     
-    // 使用 Promise.all 并行处理请求以提高效率
-    await Promise.all(validItems.map(item => 
-        ApiService.createSensorDetail(item as Omit<SensorDetail, 'sensor_detail_id' | 'created_time'>)
-    ));
+    // 使用新的批量创建API
+    const result = await ApiService.batchCreateSensorDetails(
+      validItems as Omit<SensorDetail, 'sensor_detail_id' | 'created_time'>[]
+    )
     
-    ElMessage.success(`成功添加 ${validItems.length} 条传感器详细信息`)
+    ElMessage.success(result.message)
     batchDialogVisible.value = false
     await loadSensorDetails()
-  } catch (error) {
+  } catch (error: any) {
     console.error('批量添加传感器详细信息失败:', error)
-    ElMessage.error('批量添加失败，请检查数据或联系管理员')
+    
+    // 处理重复检查错误
+    if (error?.response?.data?.detail) {
+      const detail = error.response.data.detail
+      
+      if (detail.type === 'batch_duplicate') {
+        // 批次内重复错误
+        let errorMessage = '批次内存在重复数据：\n'
+        detail.duplicates.forEach((dup: any) => {
+          const fieldName = dup.field === 'test_number' ? '传感器测试编号' : '探针编号'
+          errorMessage += `${fieldName} "${dup.value}" 在第 ${dup.positions.join('、')} 行重复\n`
+        })
+        ElMessage.error(errorMessage)
+      } else if (detail.type === 'database_duplicate') {
+        // 数据库重复错误
+        let errorMessage = '数据库中已存在重复数据：\n'
+        detail.duplicates.forEach((dup: any) => {
+          const fieldName = dup.field === 'test_number' ? '传感器测试编号' : '探针编号'
+          errorMessage += `第 ${dup.position} 行的${fieldName} "${dup.value}" 已存在\n`
+        })
+        ElMessage.error(errorMessage)
+      } else {
+        ElMessage.error(detail.message || '批量添加失败')
+      }
+    } else {
+      ElMessage.error('批量添加失败，请检查数据或联系管理员')
+    }
   } finally {
     loading.value = false
   }
@@ -849,8 +900,37 @@ const handleBatchDelete = async () => {
 
 const handleSubmit = async () => {
   try {
+    // 手动检查必填字段并给出具体提示
+    const missingFields: string[] = []
+    if (!form.value.test_number) missingFields.push('传感器测试编号')
+    if (!form.value.probe_number) missingFields.push('探针编号')
+    if (!form.value.sterilization_date) missingFields.push('灭菌日期')
+    
+    if (missingFields.length > 0) {
+      ElMessage.error(`请填写以下必填项：${missingFields.join('、')}`)
+      return
+    }
+    
+    // 执行表单验证
     const isValid = await formRef.value?.validate()
     if (!isValid) return
+    
+    // 检查数据库唯一性（编辑模式和单次录入模式都需要检查）
+    const duplicateCheck = await ApiService.checkSensorDetailDuplicates(
+      form.value.test_number,
+      form.value.probe_number,
+      isEdit.value ? form.value.sensor_detail_id : undefined
+    )
+    
+    if (duplicateCheck.has_duplicates) {
+      let errorMessage = '存在重复数据，无法保存：\n'
+      duplicateCheck.duplicates.forEach((dup: any) => {
+        const fieldName = dup.field === 'test_number' ? '传感器测试编号' : '探针编号'
+        errorMessage += `${fieldName} "${dup.value}" 已存在\n`
+      })
+      ElMessage.error(errorMessage)
+      return
+    }
     
     if (isEdit.value) {
       await ApiService.updateSensorDetail(form.value.sensor_detail_id!, form.value)
