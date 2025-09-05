@@ -1131,7 +1131,7 @@ const handleImportExcel = () => {
 const getRValueType = (rValue?: number) => {
   if (rValue === null || typeof rValue === 'undefined') return 'info'
   if (rValue > 0.99) return 'success'
-  if (rValue >= 0.99) return 'warning'
+  if (rValue >= 0.95 && rValue <= 0.98) return 'warning'
   return 'danger'
 }
 

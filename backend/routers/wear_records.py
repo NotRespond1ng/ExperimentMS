@@ -323,11 +323,11 @@ def delete_wear_record(
     if not db_wear_record:
         raise HTTPException(status_code=404, detail="佩戴记录不存在")
     
-    # 在删除佩戴记录前，清空对应传感器的结束信息
+    # 在删除佩戴记录前，更新传感器的结束信息
     sensor = db.query(Sensor).filter(Sensor.sensor_id == db_wear_record.sensor_id).first()
     if sensor:
-        sensor.end_time = None
-        sensor.end_reason = None
+        sensor.end_time = datetime.now()
+        sensor.end_reason = "佩戴记录已删除"
 
     db.delete(db_wear_record)
     db.commit()

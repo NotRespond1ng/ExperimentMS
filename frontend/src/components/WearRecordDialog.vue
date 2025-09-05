@@ -114,16 +114,16 @@
                   <el-input v-model="param.applicator_lot_no" placeholder="请输入敷贴器批号" />
                 </el-form-item>
                 <el-form-item :label="`传感器批号`">
-                  <el-input v-model="param.sensor_lot_no" placeholder="请输入传感器批号" :readonly="isEdit" />
+                  <el-input v-model="param.sensor_lot_no" placeholder="请输入传感器批号" readonly class="readonly-field" />
                 </el-form-item>
                 <el-form-item :label="`传感器批次`">
-                  <el-input v-model="param.sensor_batch" placeholder="请输入传感器批次" :readonly="isEdit" />
+                  <el-input v-model="param.sensor_batch" placeholder="请输入传感器批次" readonly class="readonly-field" />
                 </el-form-item>
                 <el-form-item :label="`传感器号`">
-                  <el-input v-model="param.sensor_number" placeholder="请输入传感器号" />
+                  <el-input v-model="param.sensor_number" placeholder="请输入传感器号" readonly class="readonly-field" />
                 </el-form-item>
                 <el-form-item :label="`发射器号`">
-                  <el-input v-model="param.transmitter_id" placeholder="请输入发射器号" :readonly="isEdit" />
+                  <el-input v-model="param.transmitter_id" placeholder="请输入发射器号" readonly class="readonly-field" />
                 </el-form-item>
                 <el-form-item :label="`佩戴位置`">
                   <el-input v-model="param.wear_position" placeholder="请输入佩戴位置" maxlength="20" />
@@ -680,5 +680,28 @@ watch(
 
 :deep(.el-button--small) {
   font-size: 12px;
+}
+
+// 只读字段样式
+:deep(.readonly-field) {
+  .el-input__wrapper {
+    background-color: #f5f7fa;
+    cursor: not-allowed;
+    box-shadow: 0 0 0 1px #dcdfe6 inset;
+  }
+  
+  .el-input__inner {
+    background-color: transparent;
+    color: #909399;
+    cursor: not-allowed;
+  }
+  
+  .el-input__wrapper:hover {
+    box-shadow: 0 0 0 1px #dcdfe6 inset;
+  }
+  
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px #dcdfe6 inset;
+  }
 }
 </style>

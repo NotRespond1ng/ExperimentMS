@@ -65,14 +65,14 @@
       
       <div class="toolbar-right">
         <el-button 
-          :disabled="!authStore.hasModulePermission('sensor_management', 'read')"
+          :disabled="!authStore.hasModulePermission('sensor_data', 'read')"
           @click="handleExport"
         >
           <el-icon><Download /></el-icon>
           导出数据
         </el-button>
         <el-button 
-          :disabled="!authStore.hasModulePermission('sensor_management', 'write')"
+          :disabled="!authStore.hasModulePermission('sensor_data', 'write')"
           type="primary" 
           @click="handleAdd"
         >
@@ -80,7 +80,7 @@
           添加传感器
         </el-button>
         <el-button 
-          :disabled="!authStore.hasModulePermission('sensor_management', 'write')"
+          :disabled="!authStore.hasModulePermission('sensor_data', 'write')"
           type="success" 
           @click="handleBatchAdd"
         >
